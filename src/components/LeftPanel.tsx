@@ -113,18 +113,18 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
       }`}
     >
       {/* Editor Sub-Header */}
-      <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/90 dark:bg-zinc-900/60 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 shrink-0 select-none">
+      <div className="h-9 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider text-[10px]">
+          <span className="font-bold text-govuk-black dark:text-zinc-100 uppercase tracking-wider text-[11px]">
             YAML Source Editor
           </span>
-          <span className="text-zinc-400 dark:text-zinc-600">|</span>
-          <span>{validationResult.stats.lines} lines</span>
-          <span className="text-zinc-400 dark:text-zinc-600">•</span>
-          <span>{formatSize(validationResult.stats.bytes)}</span>
+          <span className="text-govuk-grey-border dark:text-zinc-600">|</span>
+          <span className="font-mono text-[11px]">{validationResult.stats.lines} lines</span>
+          <span className="text-govuk-grey-border dark:text-zinc-600">•</span>
+          <span className="font-mono text-[11px]">{formatSize(validationResult.stats.bytes)}</span>
 
           {jumpFeedback && (
-            <span className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium animate-fade-in bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+            <span className="govuk-tag govuk-tag--green flex items-center gap-1 text-[11px]">
               <ArrowDownToLine className="w-3 h-3" />
               {jumpFeedback}
             </span>
@@ -140,18 +140,20 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
                 setTimeout(() => setJumpFeedback(null), 2500);
               }}
               title="Sort all users alphabetically (A-Z)"
-              className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-2 py-1 rounded transition-colors"
+              className="govuk-button--secondary text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer"
             >
-              <ArrowDownAZ className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-[11px] font-medium">Sort Users</span>
+              <ArrowDownAZ className="w-3.5 h-3.5" />
+              <span className="text-[11px]">Sort Users</span>
             </button>
           )}
 
           <button
             onClick={() => setWrapLines(!wrapLines)}
             title={wrapLines ? 'Disable line wrap' : 'Enable line wrap'}
-            className={`p-1 rounded transition-colors ${
-              wrapLines ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+            className={`p-1 border text-xs cursor-pointer rounded-none transition-colors ${
+              wrapLines
+                ? 'bg-govuk-blue text-white border-govuk-blue-dark'
+                : 'bg-white dark:bg-zinc-800 border-govuk-grey-border dark:border-zinc-700 text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey dark:hover:bg-zinc-700'
             }`}
           >
             <WrapText className="w-3.5 h-3.5" />
@@ -160,7 +162,7 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
           <button
             onClick={handlePaste}
             title="Paste from clipboard"
-            className="flex items-center gap-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-1.5 py-1 rounded transition-colors"
+            className="govuk-button--secondary text-xs px-1.5 py-0.5 flex items-center gap-1 cursor-pointer"
           >
             <Clipboard className="w-3.5 h-3.5" />
             <span className="text-[11px]">Paste</span>
@@ -169,9 +171,9 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
           <button
             onClick={handleClear}
             title="Clear editor"
-            className="flex items-center gap-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 px-1.5 py-1 rounded transition-colors"
+            className="govuk-button--secondary text-xs px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-govuk-red-tint! hover:text-govuk-red!"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5 text-govuk-red" />
             <span className="text-[11px]">Clear</span>
           </button>
         </div>
@@ -179,9 +181,9 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
 
       {/* Drag & drop overlay indicator */}
       {isDragOver && (
-        <div className="absolute inset-0 z-30 bg-indigo-950/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-indigo-400">
-          <p className="text-base font-medium text-white">Drop YAML file to inspect</p>
-          <p className="text-xs text-indigo-200 mt-1">Validation and anchor analysis run in-browser instantly</p>
+        <div className="absolute inset-0 z-30 bg-govuk-blue/90 flex flex-col items-center justify-center pointer-events-none border-4 border-dashed border-white">
+          <p className="text-lg font-bold text-white">Drop YAML file here to inspect</p>
+          <p className="text-xs text-govuk-blue-tint mt-1">100% Client-Side validation and anchor analysis</p>
         </div>
       )}
 

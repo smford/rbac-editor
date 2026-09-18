@@ -229,16 +229,16 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       {/* Header Banner */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm space-y-1">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-            <FolderPlus className="w-4 h-4" />
+      <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 space-y-1">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-govuk-black text-white flex items-center justify-center shrink-0">
+            <FolderPlus className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-base font-bold text-govuk-black dark:text-zinc-100">
               Add Project &amp; Environment Wizard
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="text-xs text-govuk-text-secondary dark:text-zinc-400">
               Create a project &amp; environment, and grant user access with selectable roles
             </p>
           </div>
@@ -247,27 +247,27 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
 
       {/* Success Notification */}
       {successFeedback && (
-        <div className="bg-emerald-500/10 border border-emerald-500/25 p-3.5 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 space-y-2 animate-fade-in shadow-xs">
+        <div className="border-4 border-govuk-green bg-[#cce2d8]/40 dark:bg-emerald-950/20 p-4 text-xs text-[#005a30] dark:text-emerald-300 space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-2 font-bold">
+              <CheckCircle2 className="w-4 h-4 text-govuk-green shrink-0" />
               <span>{successFeedback.message}</span>
             </div>
             <button
               type="button"
               onClick={() => setSuccessFeedback(null)}
-              className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 text-xs px-1.5 py-0.5 rounded"
+              className="text-govuk-text-secondary hover:text-govuk-black text-xs px-1.5 py-0.5 cursor-pointer"
             >
               Dismiss
             </button>
           </div>
 
-          <div className="flex items-center gap-2 pt-1 border-t border-emerald-500/20">
+          <div className="flex items-center gap-2 pt-2 border-t border-govuk-green/30">
             {successFeedback.line > 0 && (
               <button
                 type="button"
                 onClick={() => onJumpToLine(successFeedback.line)}
-                className="flex items-center gap-1 font-mono text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded transition-colors"
+                className="govuk-button text-xs px-3 py-1 flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Jump to line {successFeedback.line} in Editor</span>
                 <ExternalLink className="w-3 h-3" />
@@ -277,9 +277,9 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
               <button
                 type="button"
                 onClick={onSwitchToDirectory}
-                className="flex items-center gap-1 text-[11px] font-medium bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded transition-colors"
+                className="govuk-button--secondary text-xs px-3 py-1 flex items-center gap-1.5 cursor-pointer"
               >
-                <Users className="w-3 h-3" />
+                <Users className="w-3.5 h-3.5" />
                 <span>View in User Directory</span>
               </button>
             )}
@@ -288,19 +288,23 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
       )}
 
       {/* Form Container */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm space-y-5">
+      <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 space-y-5">
         {/* Step 1: Project Details */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-              1. Project Name
+            <label className="block text-sm font-bold text-govuk-black dark:text-zinc-100">
+              1. Project Name <span className="text-govuk-red">*</span>
             </label>
             {projectAlreadyExists && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20">
+              <span className="govuk-tag govuk-tag--blue text-[10px]">
                 Existing Project ({cleanProjectName})
               </span>
             )}
           </div>
+
+          <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mb-1">
+            Alphanumeric, lowercase, dashes or underscores (e.g. payment-service, auth-api)
+          </p>
 
           <div className="relative">
             <input
@@ -308,20 +312,14 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
               placeholder="e.g. payment-service, auth-api, data-lake"
               value={projectName}
               onChange={e => setProjectName(e.target.value.toLowerCase())}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="govuk-input w-full font-mono text-xs dark:bg-zinc-950 dark:text-zinc-100 focus:outline-none focus:ring-4 focus:ring-govuk-yellow"
             />
           </div>
-
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {projectAlreadyExists
-              ? 'This project is already recognized in the YAML. The new environment will be added to it for selected users.'
-              : 'Alphanumeric, lowercase, dashes or underscores.'}
-          </p>
         </div>
 
         {/* Step 2: Environment Details */}
-        <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+        <div className="space-y-2 pt-3 border-t border-govuk-grey-border dark:border-zinc-800">
+          <label className="block text-sm font-bold text-govuk-black dark:text-zinc-100">
             2. Environment &amp; Role Template
           </label>
 
@@ -749,20 +747,20 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
         </div>
 
         {/* Step 4: Preview & Action Button */}
-        <div className="space-y-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-          <div className="bg-zinc-950 text-zinc-100 p-3 rounded-lg font-mono text-xs space-y-1.5 shadow-inner">
-            <div className="flex items-center justify-between text-zinc-400 text-[11px] pb-1 border-b border-zinc-800">
-              <span>YAML Structure to be Generated:</span>
+        <div className="space-y-3 pt-3 border-t border-govuk-grey-border dark:border-zinc-800">
+          <div className="bg-govuk-grey dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 p-3 border border-govuk-grey-border dark:border-zinc-800 font-mono text-xs space-y-1.5">
+            <div className="flex items-center justify-between text-govuk-text-secondary dark:text-zinc-400 text-[11px] pb-1 border-b border-govuk-grey-border dark:border-zinc-800">
+              <span className="font-bold">YAML Structure to be Generated:</span>
               <span>Project: {cleanProjectName || '(name)'}</span>
             </div>
-            <pre className="text-emerald-400 text-[11px] overflow-x-auto">
+            <pre className="text-govuk-black dark:text-emerald-400 text-[11px] overflow-x-auto">
 {`      - name: ${cleanProjectName || 'my-project'}
         environments:
           - name: ${cleanEnvName || 'development'}
             ${useRoleAnchor ? `roles: *${selectedRoleAnchor}` : `roles:\n              - admin\n              - readonly`}`}
             </pre>
-            <div className="text-[11px] text-zinc-400 pt-1">
-              Will grant access to <span className="text-cyan-400 font-semibold">{selectedUsernames.length} selected user{selectedUsernames.length === 1 ? '' : 's'}</span>
+            <div className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 pt-1">
+              Will grant access to <span className="font-bold text-govuk-black dark:text-white">{selectedUsernames.length} selected user{selectedUsernames.length === 1 ? '' : 's'}</span>
               {addToGlobalPresets && ' + registered in global x-projects presets'}.
             </div>
           </div>
@@ -772,7 +770,7 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
               type="button"
               onClick={handleAddProject}
               disabled={!isProjectNameValid || !isEnvNameValid || (selectedUsernames.length === 0 && !addToGlobalPresets)}
-              className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-300 dark:disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed text-xs"
+              className="flex-1 govuk-button text-xs py-2.5 px-4 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FolderPlus className="w-4 h-4" />
               <span>Add Project &amp; Environment to YAML</span>
@@ -784,7 +782,7 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
                 setProjectName('');
                 deselectAll();
               }}
-              className="px-3 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-medium transition-colors"
+              className="govuk-button--secondary text-xs px-3 py-2.5 cursor-pointer"
             >
               Reset
             </button>

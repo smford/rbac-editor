@@ -12,8 +12,8 @@ export const App: React.FC = () => {
     return USERS_YAML_DEFAULT || '';
   });
 
-  // Default to dark mode
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  // Default to GDS light mode
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [leftWidthPercent, setLeftWidthPercent] = useState<number>(50);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
@@ -118,7 +118,7 @@ export const App: React.FC = () => {
   }, [isResizing]);
 
   return (
-    <div className={`h-screen w-screen flex flex-col ${darkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
+    <div className={`h-screen w-screen flex flex-col ${darkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-govuk-grey text-govuk-black'}`}>
       {/* Top Header */}
       <Header
         validationResult={validationResult}
@@ -134,7 +134,7 @@ export const App: React.FC = () => {
       {/* Main Two-Panel Split View */}
       <main
         ref={containerRef}
-        className="flex-1 min-h-0 flex flex-col md:flex-row relative overflow-hidden"
+        className="flex-1 min-h-0 flex flex-col md:flex-row relative overflow-hidden bg-white dark:bg-zinc-950"
       >
         {/* Left Panel: Source YAML Editor */}
         <section
@@ -155,8 +155,8 @@ export const App: React.FC = () => {
         {/* Resizable Divider */}
         <div
           onMouseDown={handleMouseDown}
-          className={`hidden md:flex w-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-indigo-500 cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
-            isResizing ? 'bg-indigo-500' : ''
+          className={`hidden md:flex w-1.5 bg-govuk-grey-border dark:bg-zinc-800 hover:bg-govuk-blue dark:hover:bg-govuk-blue cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
+            isResizing ? 'bg-govuk-blue' : ''
           }`}
           title="Drag to resize panels"
         />

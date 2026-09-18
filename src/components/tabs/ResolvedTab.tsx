@@ -55,28 +55,28 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
   return (
     <div className="h-full flex flex-col p-4 space-y-3">
       {/* Top Banner */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <h3 className="text-base font-bold text-govuk-black dark:text-zinc-100 flex items-center gap-2">
             Dereferenced &amp; Evaluated Output
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+            <span className="govuk-tag govuk-tag--green text-[10px]">
               Anchors Expanded
             </span>
           </h3>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-            All anchors, aliases, and merge keys (&lt;&lt;) are fully expanded into explicit values.
+          <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-0.5">
+            All anchors, aliases, and merge keys (&lt;&lt;) are fully evaluated into explicit values.
           </p>
         </div>
 
         {/* View mode toggle & actions */}
         <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-0.5 text-xs">
+          <div className="flex items-center bg-govuk-grey dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-0.5 text-xs">
             <button
               onClick={() => setViewMode('yaml')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors ${
+              className={`flex items-center gap-1 px-3 py-1 text-xs cursor-pointer ${
                 viewMode === 'yaml'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  ? 'bg-govuk-black text-white font-bold'
+                  : 'text-govuk-black dark:text-zinc-300 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
               }`}
             >
               <FileCode className="w-3.5 h-3.5" />
@@ -84,10 +84,10 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
             </button>
             <button
               onClick={() => setViewMode('json')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-colors ${
+              className={`flex items-center gap-1 px-3 py-1 text-xs cursor-pointer ${
                 viewMode === 'json'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium shadow-sm'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  ? 'bg-govuk-black text-white font-bold'
+                  : 'text-govuk-black dark:text-zinc-300 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
               }`}
             >
               <Braces className="w-3.5 h-3.5" />
@@ -97,16 +97,16 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
 
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 transition-colors"
+            className="govuk-button--secondary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">Copied</span>
+                <Check className="w-3.5 h-3.5 text-govuk-green" />
+                <span className="font-bold text-govuk-green">Copied</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                <Copy className="w-3.5 h-3.5" />
                 <span>Copy</span>
               </>
             )}
@@ -114,21 +114,21 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1 text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 transition-colors"
+            className="govuk-button text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+            <Download className="w-3.5 h-3.5" />
             <span>Download</span>
           </button>
         </div>
       </div>
 
       {/* Code Viewer */}
-      <div className="flex-1 min-h-0 bg-zinc-100 dark:bg-black/60 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-sm">
-        <div className="h-8 px-3 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-200/70 dark:bg-zinc-900/40 flex items-center justify-between text-[11px] font-mono text-zinc-600 dark:text-zinc-400">
-          <span>{viewMode === 'yaml' ? 'Resolved YAML (Pure Objects)' : 'Resolved JSON'}</span>
+      <div className="flex-1 min-h-0 bg-govuk-grey dark:bg-black border border-govuk-grey-border dark:border-zinc-800 flex flex-col">
+        <div className="h-8 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-[#e5e5e4] dark:bg-zinc-900 flex items-center justify-between text-[11px] font-mono text-govuk-black dark:text-zinc-400">
+          <span className="font-bold">{viewMode === 'yaml' ? 'Resolved YAML (Pure Objects)' : 'Resolved JSON'}</span>
           <span>{content.split('\n').length} lines</span>
         </div>
-        <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-zinc-800 dark:text-zinc-300 leading-relaxed select-text">
+        <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-govuk-black dark:text-zinc-300 leading-relaxed select-text">
           {content}
         </pre>
       </div>

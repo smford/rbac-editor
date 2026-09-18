@@ -5,7 +5,6 @@ import {
   UserPlus,
   Users,
   FileCheck,
-  Sparkles,
   FolderPlus,
   FolderTree,
 } from 'lucide-react';
@@ -48,35 +47,33 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   }, [errorCount, activeTab]);
 
   return (
-    <div className="h-full flex flex-col bg-slate-50/70 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 select-none transition-colors">
-      {/* Tab Navigation Header */}
-      <div className="h-10 px-2 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/60 flex items-center justify-between shrink-0 overflow-x-auto">
-        <div className="flex items-center gap-1">
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-950 border-l border-govuk-grey-border dark:border-zinc-800 select-none transition-colors">
+      {/* GOV.UK Tab Navigation Header */}
+      <div className="h-11 px-2 border-b border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-0.5">
           {/* Diagnostics Tab */}
           <button
             onClick={() => setActiveTab('diagnostics')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
               activeTab === 'diagnostics'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
             }`}
           >
             <AlertCircle
               className={`w-3.5 h-3.5 ${
                 errorCount > 0
-                  ? 'text-rose-600 dark:text-rose-400'
+                  ? 'text-govuk-red'
                   : warningCount > 0
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-emerald-600 dark:text-emerald-400'
+                  ? 'text-govuk-yellow-tint'
+                  : 'text-govuk-green'
               }`}
             />
             <span>Validation</span>
             {totalIssues > 0 && (
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                  errorCount > 0
-                    ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
-                    : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                className={`govuk-tag text-[10px] py-0.2 px-1 ${
+                  errorCount > 0 ? 'govuk-tag--red' : 'govuk-tag--yellow text-govuk-black'
                 }`}
               >
                 {totalIssues}
@@ -87,16 +84,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {/* Anchors & Aliases Tab */}
           <button
             onClick={() => setActiveTab('anchors')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
               activeTab === 'anchors'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
             }`}
           >
-            <GitFork className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <GitFork className="w-3.5 h-3.5" />
             <span>Anchors &amp; Merges</span>
             {validationResult.stats.anchorCount > 0 && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+              <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
                 {validationResult.stats.anchorCount}
               </span>
             )}
@@ -105,17 +102,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {/* Add User Assistant Tab */}
           <button
             onClick={() => setActiveTab('adduser')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
               activeTab === 'adduser'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
             }`}
           >
-            <UserPlus className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            <UserPlus className="w-3.5 h-3.5" />
             <span>Add User</span>
             {validationResult.isUsersConfig && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center gap-0.5">
-                <Sparkles className="w-2.5 h-2.5" />
+              <span className="govuk-tag govuk-tag--purple text-[10px] py-0.2 px-1">
                 Wizard
               </span>
             )}
@@ -124,17 +120,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {/* Add Project Assistant Tab */}
           <button
             onClick={() => setActiveTab('addproject')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
               activeTab === 'addproject'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
             }`}
           >
-            <FolderPlus className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <FolderPlus className="w-3.5 h-3.5" />
             <span>Add Project</span>
             {validationResult.isUsersConfig && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 flex items-center gap-0.5">
-                <Sparkles className="w-2.5 h-2.5" />
+              <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
                 Wizard
               </span>
             )}
@@ -144,13 +139,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {validationResult.isUsersConfig && (
             <button
               onClick={() => setActiveTab('directory')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                 activeTab === 'directory'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                  : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <Users className="w-3.5 h-3.5" />
               <span>Users ({validationResult.stats.usersCount})</span>
             </button>
           )}
@@ -160,13 +155,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             <button
               onClick={() => setActiveTab('hierarchy')}
               title="View Project -> Environments -> Roles -> Users Hierarchy"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
                 activeTab === 'hierarchy'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                  : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
               }`}
             >
-              <FolderTree className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <FolderTree className="w-3.5 h-3.5" />
               <span>Project Hierarchy</span>
             </button>
           )}
@@ -174,13 +169,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           {/* Resolved & JSON Tab */}
           <button
             onClick={() => setActiveTab('resolved')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
               activeTab === 'resolved'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
+                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
             }`}
           >
-            <FileCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <FileCheck className="w-3.5 h-3.5" />
             <span>Resolved YAML</span>
           </button>
         </div>

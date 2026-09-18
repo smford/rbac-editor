@@ -188,20 +188,20 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       {/* Header card */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md">
-            <UserPlus className="w-4 h-4" />
+      <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-govuk-black text-white flex items-center justify-center shrink-0">
+            <UserPlus className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <h3 className="text-base font-bold text-govuk-black dark:text-zinc-100 flex items-center gap-2">
               Add User Assistant
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+              <span className="govuk-tag govuk-tag--purple text-[10px]">
                 users.yaml
               </span>
             </h3>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              Easily configure and insert a new user with reusable RBAC anchors.
+            <p className="text-xs text-govuk-text-secondary dark:text-zinc-400">
+              Configure and insert a new user with reusable RBAC anchors.
             </p>
           </div>
         </div>
@@ -211,47 +211,50 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
             type="button"
             onClick={handleSortAllUsers}
             title="Sort all existing users in the YAML file alphabetically A-Z"
-            className="flex items-center gap-1.5 text-xs bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-indigo-600 text-zinc-800 dark:text-zinc-300 dark:hover:text-white border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 rounded-lg transition-colors shrink-0"
+            className="govuk-button--secondary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer shrink-0"
           >
-            <ArrowDownAZ className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <ArrowDownAZ className="w-3.5 h-3.5 text-govuk-blue" />
             <span>Sort All Users A-Z</span>
           </button>
         )}
       </div>
 
       {/* Form Section */}
-      <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-4 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 space-y-4">
         {/* Step 1: Username */}
-        <div>
-          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
-            1. New Username <span className="text-rose-500 dark:text-rose-400">*</span>
+        <div className="govuk-form-group">
+          <label className="block text-sm font-bold text-govuk-black dark:text-zinc-100 mb-1">
+            1. New Username <span className="text-govuk-red">*</span>
           </label>
+          <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mb-1.5">
+            Lowercase alphanumeric username, typically firstname.lastname
+          </p>
           <div className="relative">
             <input
               type="text"
               placeholder="e.g. john.doe or alex.miller"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              className="govuk-input w-full font-mono text-xs dark:bg-zinc-950 dark:text-zinc-100 dark:border-zinc-600 focus:outline-none focus:ring-4 focus:ring-govuk-yellow"
             />
           </div>
 
           {/* Real-time username validation feedback */}
           {username.trim() && (
-            <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+            <div className="mt-2 flex items-center gap-1.5 text-xs">
               {usernameCheck.valid ? (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                <span className="govuk-tag govuk-tag--green flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {usernameCheck.message}
                 </span>
               ) : (
-                <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-medium">
+                <div className="flex items-center gap-1.5 font-bold text-govuk-red">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{usernameCheck.message}</span>
                   {usernameCheck.line && (
                     <button
                       onClick={() => onJumpToLine(usernameCheck.line!)}
-                      className="underline text-[11px] hover:text-rose-700 dark:hover:text-rose-300 ml-1"
+                      className="text-govuk-blue dark:text-sky-400 underline text-xs ml-1 hover:text-govuk-blue-dark cursor-pointer"
                     >
                       Jump to existing user
                     </button>
@@ -264,27 +267,30 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
 
         {/* Step 2: Access Pattern Template */}
         <div>
-          <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-bold text-govuk-black dark:text-zinc-100 mb-1">
             2. Access Pattern &amp; Anchor Reusability
           </label>
+          <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mb-2">
+            Select an RBAC permission template
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {/* Non-Prod Admin Preset */}
             <button
               type="button"
               onClick={() => setTemplateMode('preset_non_prod')}
-              className={`p-3 rounded-lg border text-left transition-all ${
+              className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'preset_non_prod'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 text-indigo-900 dark:text-indigo-200'
-                  : 'bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
               }`}
             >
-              <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-200">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
+                <Zap className="w-3.5 h-3.5 text-govuk-yellow-tint text-amber-600" />
                 <span>Power Admin Preset</span>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Admin in sandbox, dev &amp; staging (no prod admin). Reuses <code className="text-purple-600 dark:text-purple-300 font-semibold">*all_projects_non_prod_admin</code>
+              <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
+                Admin in sandbox, dev &amp; staging. Reuses <code className="font-mono text-govuk-purple font-bold">*all_projects_non_prod_admin</code>
               </p>
             </button>
 
@@ -292,18 +298,18 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
             <button
               type="button"
               onClick={() => setTemplateMode('preset_all_admin')}
-              className={`p-3 rounded-lg border text-left transition-all ${
+              className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'preset_all_admin'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 text-indigo-900 dark:text-indigo-200'
-                  : 'bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
               }`}
             >
-              <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-200">
-                <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
+                <Shield className="w-3.5 h-3.5 text-govuk-purple" />
                 <span>Super Admin Preset</span>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Admin in all projects &amp; all environments. Reuses <code className="text-purple-600 dark:text-purple-300 font-semibold">*all_projects_admin</code>
+              <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
+                Admin in all projects &amp; all environments. Reuses <code className="font-mono text-govuk-purple font-bold">*all_projects_admin</code>
               </p>
             </button>
 
@@ -316,18 +322,18 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                   setCloneFromUser(usersMeta.users[0].username);
                 }
               }}
-              className={`p-3 rounded-lg border text-left transition-all ${
+              className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'clone_user'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 text-indigo-900 dark:text-indigo-200'
-                  : 'bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
               }`}
             >
-              <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-200">
-                <Copy className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
+                <Copy className="w-3.5 h-3.5 text-govuk-blue" />
                 <span>Clone Existing User</span>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Copy permissions from a current teammate
+              <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
+                Copy permissions from an existing teammate
               </p>
             </button>
 
@@ -335,18 +341,18 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
             <button
               type="button"
               onClick={() => setTemplateMode('custom')}
-              className={`p-3 rounded-lg border text-left transition-all ${
+              className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'custom'
-                  ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-500/50 text-indigo-900 dark:text-indigo-200'
-                  : 'bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
               }`}
             >
-              <div className="flex items-center gap-2 font-medium text-xs text-zinc-900 dark:text-zinc-200">
-                <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
+                <Layers className="w-3.5 h-3.5 text-govuk-green" />
                 <span>Custom Project Builder</span>
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">
-                Select individual projects &amp; env anchors
+              <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
+                Select individual projects &amp; environment anchors
               </p>
             </button>
           </div>
@@ -354,14 +360,14 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
 
         {/* Clone User Sub-selector */}
         {templateMode === 'clone_user' && usersMeta?.users && (
-          <div className="bg-zinc-50 dark:bg-zinc-950/80 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2">
-            <label className="block text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+          <div className="bg-govuk-grey dark:bg-zinc-950 p-3 border border-govuk-grey-border dark:border-zinc-800 space-y-2">
+            <label className="block text-xs font-bold text-govuk-black dark:text-zinc-300">
               Select user to clone permissions from:
             </label>
             <select
               value={cloneFromUser}
               onChange={e => setCloneFromUser(e.target.value)}
-              className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-indigo-500"
+              className="govuk-input w-full text-xs font-mono dark:bg-zinc-900 dark:text-zinc-200 focus:outline-none focus:ring-4 focus:ring-govuk-yellow"
             >
               {usersMeta.users.map(u => (
                 <option key={u.username} value={u.username}>
@@ -374,15 +380,15 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
 
         {/* Custom Project Builder Sub-form */}
         {templateMode === 'custom' && (
-          <div className="bg-zinc-50 dark:bg-zinc-950/80 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-3">
+          <div className="bg-govuk-grey dark:bg-zinc-950 p-3 border border-govuk-grey-border dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold uppercase tracking-wider">
+              <span className="text-xs text-govuk-black dark:text-zinc-300 font-bold uppercase tracking-wider">
                 Assigned Projects &amp; Environment Anchors
               </span>
               <button
                 type="button"
                 onClick={addProjectRow}
-                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/20"
+                className="govuk-button--secondary text-xs px-2 py-1 flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Project</span>
@@ -401,7 +407,7 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                         prev.map((p, i) => (i === idx ? { ...p, projectName: val } : p))
                       );
                     }}
-                    className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-xs text-zinc-900 dark:text-zinc-200 focus:outline-none focus:border-indigo-500"
+                    className="govuk-input flex-1 text-xs dark:bg-zinc-900 dark:text-zinc-200"
                   >
                     {knownProjects.map(kp => (
                       <option key={kp} value={kp}>
@@ -419,7 +425,7 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                         prev.map((p, i) => (i === idx ? { ...p, envAnchor: val } : p))
                       );
                     }}
-                    className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded px-2 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:outline-none focus:border-indigo-500"
+                    className="govuk-input flex-1 text-xs font-mono text-govuk-purple dark:text-purple-300 dark:bg-zinc-900"
                   >
                     {availableEnvAnchors.map(ea => (
                       <option key={ea} value={ea}>
@@ -433,10 +439,10 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                     <button
                       type="button"
                       onClick={() => removeProjectRow(idx)}
-                      className="p-1 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+                      className="p-1.5 text-govuk-text-secondary hover:text-govuk-red cursor-pointer"
                       title="Remove project"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -448,40 +454,40 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
         {/* Step 3: Generated YAML Snippet Preview */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+            <label className="text-xs font-bold text-govuk-black dark:text-zinc-300 uppercase tracking-wider">
               Generated YAML Snippet
             </label>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+              className="govuk-button--secondary text-xs px-2.5 py-1 flex items-center gap-1 cursor-pointer"
             >
               {copySuccess ? (
                 <>
-                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                  <Check className="w-3.5 h-3.5 text-govuk-green" />
+                  <span className="font-bold text-govuk-green">Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3 h-3" />
+                  <Copy className="w-3.5 h-3.5" />
                   <span>Copy Snippet</span>
                 </>
               )}
             </button>
           </div>
 
-          <pre className="p-3 bg-zinc-100 dark:bg-black/60 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono text-emerald-800 dark:text-emerald-400/90 overflow-x-auto">
+          <pre className="p-3 bg-govuk-grey dark:bg-black/60 border border-govuk-grey-border dark:border-zinc-800 text-xs font-mono text-govuk-black dark:text-emerald-400 overflow-x-auto">
             {generatedSnippet}
           </pre>
         </div>
 
         {/* Step 4: Insertion Actions */}
-        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
-            <span>Insert Location:</span>
+        <div className="pt-3 border-t border-govuk-grey-border dark:border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-govuk-black dark:text-zinc-300">
+            <span className="font-bold">Insert Location:</span>
             <select
               value={insertPosition}
               onChange={e => setInsertPosition(e.target.value as any)}
-              className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 rounded px-2.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-indigo-500"
+              className="govuk-input text-xs dark:bg-zinc-950 dark:text-zinc-200"
             >
               <option value="alphabetical">Alphabetical Order (Recommended)</option>
               <option value="start">Top of users: array</option>
@@ -492,17 +498,17 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
           <button
             onClick={handleInsert}
             disabled={!username.trim() || !usernameCheck.valid}
-            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-500 text-white font-medium text-xs px-4 py-2 rounded-lg shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed"
+            className="govuk-button text-xs px-4 py-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />
             <span>Insert into YAML File</span>
-            <ArrowRight className="w-3.5 h-3.5 opacity-70" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {insertSuccessMsg && (
-          <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <div className="border-4 border-govuk-green bg-[#cce2d8]/40 dark:bg-emerald-950/20 text-[#005a30] dark:text-emerald-300 p-3 text-xs flex items-center gap-2 font-bold">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-govuk-green" />
             <span>{insertSuccessMsg}</span>
           </div>
         )}
