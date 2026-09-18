@@ -148,6 +148,53 @@
   background-color: #ffffff;
 }
 
+/* GDS Skip Link */
+.govuk-skip-link {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  z-index: 100;
+  padding: 10px 15px;
+  background-color: #ffdd00;
+  color: #0b0c0c;
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  box-shadow: 0 4px #0b0c0c;
+}
+.govuk-skip-link:focus {
+  top: 0;
+  left: 0;
+  outline: 3px solid transparent;
+}
+
+/* GDS Links */
+.govuk-link {
+  font-family: inherit;
+  color: #1d70b8;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  font-weight: 700;
+}
+.govuk-link:hover {
+  color: #003078;
+  text-decoration-thickness: 3px;
+}
+.govuk-link:focus-visible {
+  outline: 3px solid transparent;
+  background-color: #ffdd00;
+  color: #0b0c0c;
+  box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c;
+  text-decoration: none;
+}
+.dark .govuk-link {
+  color: #bbd4ea;
+}
+.dark .govuk-link:hover {
+  color: #ffffff;
+}
+
 /* GDS Back Link */
 .govuk-back-link {
   font-size: 0.875rem;

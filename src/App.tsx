@@ -3,6 +3,8 @@ import YAML from 'yaml';
 import { Header } from './components/Header';
 import { LeftPanel, LeftPanelHandle } from './components/LeftPanel';
 import { RightPanel, RightPanelTab } from './components/RightPanel';
+import { Footer } from './components/Footer';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { validateYaml, sortUsersInYaml, sortProjectsInPresetYaml } from './utils/yamlValidator';
 import { USERS_YAML_DEFAULT } from './data/defaultUsersYaml';
 
@@ -13,6 +15,7 @@ export const App: React.FC = () => {
   });
 
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('diagnostics');
+  const [showShortcuts, setShowShortcuts] = useState<boolean>(false);
 
   // Default to GDS light mode
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -138,8 +141,101 @@ export const App: React.FC = () => {
     };
   }, [isResizing]);
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        Boolean(target.closest('.cm-editor'))
+      );
+
+      // Escape key closes shortcuts modal or wizards
+      if (e.key === 'Escape') {
+        if (showShortcuts) {
+          e.preventDefault();
+          setShowShortcuts(false);
+          return;
+        }
+        if (rightPanelTab === 'adduser' || rightPanelTab === 'addproject') {
+          e.preventDefault();
+          setRightPanelTab('directory');
+          return;
+        }
+      }
+
+      // '?' opens shortcuts modal when not typing in an input/editor
+      if (e.key === '?' && !isInput) {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+        return;
+      }
+
+      // Ctrl/Cmd + S to Export / Download
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleDownloadYaml();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + F to Format
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        handleFormatYaml();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + U to Sort Users
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        handleSortUsers();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + P to Sort Projects
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handleSortProjects();
+        return;
+      }
+
+      // Alt + 1..4, U, P for view navigation
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === '1') {
+          e.preventDefault();
+          setRightPanelTab('diagnostics');
+        } else if (e.key === '2') {
+          e.preventDefault();
+          setRightPanelTab('anchors');
+        } else if (e.key === '3') {
+          e.preventDefault();
+          setRightPanelTab('directory');
+        } else if (e.key === '4') {
+          e.preventDefault();
+          setRightPanelTab('resolved');
+        } else if (e.key.toLowerCase() === 'u') {
+          e.preventDefault();
+          setRightPanelTab('adduser');
+        } else if (e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          setRightPanelTab('addproject');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showShortcuts, rightPanelTab, handleDownloadYaml, handleFormatYaml, handleSortUsers, handleSortProjects]);
+
   return (
     <div className={`h-screen w-screen flex flex-col ${darkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-govuk-grey text-govuk-black'}`}>
+      {/* GDS Skip to Main Content Link */}
+      <a href="#main-content" className="govuk-skip-link">
+        Skip to main content
+      </a>
+
       {/* Top Header */}
       <Header
         validationResult={validationResult}
@@ -157,6 +253,7 @@ export const App: React.FC = () => {
 
       {/* Main Two-Panel Split View */}
       <main
+        id="main-content"
         ref={containerRef}
         className="flex-1 min-h-0 flex flex-col md:flex-row relative overflow-hidden bg-white dark:bg-zinc-950"
       >
@@ -178,7 +275,7 @@ export const App: React.FC = () => {
         {/* Resizable Divider */}
         <div
           onMouseDown={handleMouseDown}
-          className={`hidden md:flex w-1.5 bg-govuk-grey-border dark:bg-zinc-800 hover:bg-govuk-blue dark:hover:bg-govuk-blue cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
+          className={`hidden md:flex w-1.5 bg-govuk-grey-border dark:border-zinc-800 hover:bg-govuk-blue dark:hover:bg-govuk-blue cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
             isResizing ? 'bg-govuk-blue' : ''
           }`}
           title="Drag to resize panels"
@@ -202,6 +299,19 @@ export const App: React.FC = () => {
           />
         </section>
       </main>
+
+      {/* Compact GDS Footer Status Bar */}
+      <Footer
+        stats={validationResult.stats}
+        onOpenShortcuts={() => setShowShortcuts(true)}
+        isUsersConfig={validationResult.isUsersConfig}
+      />
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 };
