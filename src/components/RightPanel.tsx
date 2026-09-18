@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AlertCircle,
   GitFork,
@@ -48,143 +48,162 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     }
   }, [errorCount, activeTab]);
 
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const allTabs: {
+    id: RightPanelTab;
+    label: string;
+    icon: React.ReactNode;
+    tag?: React.ReactNode;
+    visible?: boolean;
+  }[] = [
+    {
+      id: 'diagnostics',
+      label: 'Validation',
+      icon: (
+        <AlertCircle
+          className={`w-3.5 h-3.5 ${
+            errorCount > 0
+              ? 'text-govuk-red'
+              : warningCount > 0
+              ? 'text-govuk-yellow-tint'
+              : 'text-govuk-green'
+          }`}
+        />
+      ),
+      tag: totalIssues > 0 ? (
+        <span
+          className={`govuk-tag text-[10px] py-0.2 px-1 ${
+            errorCount > 0 ? 'govuk-tag--red' : 'govuk-tag--yellow text-govuk-black'
+          }`}
+        >
+          {totalIssues}
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'anchors',
+      label: 'Anchors',
+      icon: <GitFork className="w-3.5 h-3.5" />,
+      tag: validationResult.stats.anchorCount > 0 ? (
+        <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
+          {validationResult.stats.anchorCount}
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'adduser',
+      label: 'Add User',
+      icon: <UserPlus className="w-3.5 h-3.5" />,
+      tag: validationResult.isUsersConfig ? (
+        <span className="govuk-tag govuk-tag--purple text-[10px] py-0.2 px-1">
+          Wizard
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'addproject',
+      label: 'Add Project',
+      icon: <FolderPlus className="w-3.5 h-3.5" />,
+      tag: validationResult.isUsersConfig ? (
+        <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
+          Wizard
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'directory',
+      label: `Users (${validationResult.stats.usersCount})`,
+      icon: <Users className="w-3.5 h-3.5" />,
+      visible: validationResult.isUsersConfig,
+    },
+    {
+      id: 'hierarchy',
+      label: 'Project Hierarchy',
+      icon: <FolderTree className="w-3.5 h-3.5" />,
+      visible: validationResult.isUsersConfig,
+    },
+    {
+      id: 'resolved',
+      label: 'Resolved YAML',
+      icon: <FileCheck className="w-3.5 h-3.5" />,
+    },
+  ];
+
+  const visibleTabs = allTabs.filter(t => t.visible !== false);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextIndex = (currentIndex + 1) % visibleTabs.length;
+      const nextTab = visibleTabs[nextIndex];
+      setActiveTab(nextTab.id);
+      tabRefs.current[nextTab.id]?.focus();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevIndex = (currentIndex - 1 + visibleTabs.length) % visibleTabs.length;
+      const prevTab = visibleTabs[prevIndex];
+      setActiveTab(prevTab.id);
+      tabRefs.current[prevTab.id]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      const firstTab = visibleTabs[0];
+      setActiveTab(firstTab.id);
+      tabRefs.current[firstTab.id]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const lastTab = visibleTabs[visibleTabs.length - 1];
+      setActiveTab(lastTab.id);
+      tabRefs.current[lastTab.id]?.focus();
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-zinc-950 border-l border-govuk-grey-border dark:border-zinc-800 select-none transition-colors">
       {/* GOV.UK Tab Navigation Header */}
-      <div className="h-11 px-2 border-b border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between shrink-0 overflow-x-auto">
-        <div className="flex items-center gap-0.5">
-          {/* Diagnostics Tab */}
-          <button
-            onClick={() => setActiveTab('diagnostics')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-              activeTab === 'diagnostics'
-                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-            }`}
-          >
-            <AlertCircle
-              className={`w-3.5 h-3.5 ${
-                errorCount > 0
-                  ? 'text-govuk-red'
-                  : warningCount > 0
-                  ? 'text-govuk-yellow-tint'
-                  : 'text-govuk-green'
-              }`}
-            />
-            <span>Validation</span>
-            {totalIssues > 0 && (
-              <span
-                className={`govuk-tag text-[10px] py-0.2 px-1 ${
-                  errorCount > 0 ? 'govuk-tag--red' : 'govuk-tag--yellow text-govuk-black'
-                }`}
+      <nav
+        className="px-2 pt-1.5 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-end shrink-0 overflow-x-auto overflow-y-hidden"
+        role="tablist"
+        aria-label="Editor Views"
+      >
+        <div className="flex items-end gap-1 min-w-max pb-0 -mb-[2px]">
+          {visibleTabs.map((tab, idx) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={el => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={0}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={e => handleTabKeyDown(e, idx)}
+                className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 text-xs cursor-pointer transition-colors border-t-4 select-none shrink-0 ${
+                  isActive
+                    ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 border-b-2 border-b-white dark:border-b-zinc-950 z-10'
+                    : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 border-t-transparent border-x border-transparent border-b-2 border-b-transparent font-medium'
+                } focus:outline-none focus-visible:outline-none focus-visible:border-t-govuk-blue focus-visible:bg-govuk-yellow focus-visible:text-govuk-black focus-visible:shadow-[0_-2px_#ffdd00,0_4px_#0b0c0c] focus-visible:z-20`}
               >
-                {totalIssues}
-              </span>
-            )}
-          </button>
-
-          {/* Anchors Tab */}
-          <button
-            onClick={() => setActiveTab('anchors')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-              activeTab === 'anchors'
-                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-            }`}
-          >
-            <GitFork className="w-3.5 h-3.5" />
-            <span>Anchors</span>
-            {validationResult.stats.anchorCount > 0 && (
-              <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
-                {validationResult.stats.anchorCount}
-              </span>
-            )}
-          </button>
-
-          {/* Add User Assistant Tab */}
-          <button
-            onClick={() => setActiveTab('adduser')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-              activeTab === 'adduser'
-                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Add User</span>
-            {validationResult.isUsersConfig && (
-              <span className="govuk-tag govuk-tag--purple text-[10px] py-0.2 px-1">
-                Wizard
-              </span>
-            )}
-          </button>
-
-          {/* Add Project Assistant Tab */}
-          <button
-            onClick={() => setActiveTab('addproject')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-              activeTab === 'addproject'
-                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-            }`}
-          >
-            <FolderPlus className="w-3.5 h-3.5" />
-            <span>Add Project</span>
-            {validationResult.isUsersConfig && (
-              <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
-                Wizard
-              </span>
-            )}
-          </button>
-
-          {/* User Directory Tab (shown if users are configured) */}
-          {validationResult.isUsersConfig && (
-            <button
-              onClick={() => setActiveTab('directory')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-                activeTab === 'directory'
-                  ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                  : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Users ({validationResult.stats.usersCount})</span>
-            </button>
-          )}
-
-          {/* Project Hierarchy Tab (Project -> Environments -> Roles -> Users) */}
-          {validationResult.isUsersConfig && (
-            <button
-              onClick={() => setActiveTab('hierarchy')}
-              title="View Project -> Environments -> Roles -> Users Hierarchy"
-              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-                activeTab === 'hierarchy'
-                  ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                  : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-              }`}
-            >
-              <FolderTree className="w-3.5 h-3.5" />
-              <span>Project Hierarchy</span>
-            </button>
-          )}
-
-          {/* Resolved & JSON Tab */}
-          <button
-            onClick={() => setActiveTab('resolved')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
-              activeTab === 'resolved'
-                ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-4 border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 -mb-[1px]'
-                : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
-            }`}
-          >
-            <FileCheck className="w-3.5 h-3.5" />
-            <span>Resolved YAML</span>
-          </button>
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.tag}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      </nav>
 
       {/* Tab Content Body */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div
+        className="flex-1 min-h-0 overflow-hidden bg-white dark:bg-zinc-950"
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === 'diagnostics' && (
           <DiagnosticsTab
             validationResult={validationResult}
