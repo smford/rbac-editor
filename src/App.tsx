@@ -172,8 +172,6 @@ export const App: React.FC = () => {
             onChange={setYamlContent}
             validationResult={validationResult}
             darkMode={darkMode}
-            onSortUsers={handleSortUsers}
-            onSortProjects={handleSortProjects}
           />
         </section>
 

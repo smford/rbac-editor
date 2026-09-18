@@ -2,7 +2,7 @@ import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { yaml } from '@codemirror/lang-yaml';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Trash2, Clipboard, WrapText, ArrowDownToLine, ArrowDownAZ } from 'lucide-react';
+import { Trash2, Clipboard, WrapText, ArrowDownToLine } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
 export interface LeftPanelHandle {
@@ -14,8 +14,6 @@ interface LeftPanelProps {
   onChange: (val: string) => void;
   validationResult: ValidationResult;
   darkMode: boolean;
-  onSortUsers?: () => void;
-  onSortProjects?: (targetAnchor?: string) => void;
 }
 
 export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
@@ -23,8 +21,6 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
   onChange,
   validationResult,
   darkMode,
-  onSortUsers,
-  onSortProjects,
 }, ref) => {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const [wrapLines, setWrapLines] = useState(false);
@@ -111,87 +107,64 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`h-full flex flex-col relative transition-colors ${
-        isDragOver ? 'ring-2 ring-indigo-500 bg-indigo-950/20' : ''
+        isDragOver ? 'ring-4 ring-govuk-blue bg-govuk-blue-tint/20' : ''
       }`}
     >
       {/* Editor Sub-Header */}
-      <div className="h-9 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-govuk-black dark:text-zinc-100 uppercase tracking-wider text-[11px]">
-            YAML Source Editor
+      <div className="min-h-[42px] px-3 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none gap-2 flex-wrap sm:flex-nowrap">
+        {/* Left: Heading and Metadata */}
+        <div className="flex items-center gap-2 flex-wrap py-1">
+          <h2 className="text-xs font-bold text-govuk-black dark:text-zinc-100">
+            YAML editor
+          </h2>
+          <span className="text-xs text-[#505a5f] dark:text-zinc-400">
+            ({validationResult.stats.lines} lines · {formatSize(validationResult.stats.bytes)})
           </span>
-          <span className="text-govuk-grey-border dark:text-zinc-600">|</span>
-          <span className="font-mono text-[11px]">{validationResult.stats.lines} lines</span>
-          <span className="text-govuk-grey-border dark:text-zinc-600">•</span>
-          <span className="font-mono text-[11px]">{formatSize(validationResult.stats.bytes)}</span>
 
           {jumpFeedback && (
-            <span className="govuk-tag govuk-tag--green flex items-center gap-1 text-[11px]">
+            <strong className="govuk-tag govuk-tag--green inline-flex items-center gap-1 text-[11px] py-0.5 px-2">
               <ArrowDownToLine className="w-3 h-3" />
-              {jumpFeedback}
-            </span>
+              <span>{jumpFeedback}</span>
+            </strong>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {validationResult.isUsersConfig && onSortUsers && (
-            <button
-              onClick={() => {
-                onSortUsers();
-                setJumpFeedback('Sorted users A-Z');
-                setTimeout(() => setJumpFeedback(null), 2500);
-              }}
-              title="Sort all users alphabetically (A-Z)"
-              className="govuk-button--secondary text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer"
-            >
-              <ArrowDownAZ className="w-3.5 h-3.5" />
-              <span className="text-[11px]">Sort Users</span>
-            </button>
-          )}
-
-          {Boolean(validationResult.hasPresetProjectAnchors ?? validationResult.anchors.some(a => a.name === 'all_projects_admin' || a.name === 'all_projects_non_prod_admin')) && onSortProjects && (
-            <button
-              onClick={() => {
-                onSortProjects();
-                setJumpFeedback('Sorted projects A-Z');
-                setTimeout(() => setJumpFeedback(null), 2500);
-              }}
-              title="Sort all projects alphabetically in all_projects_admin and all_projects_non_prod_admin"
-              className="govuk-button--secondary text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer"
-            >
-              <ArrowDownAZ className="w-3.5 h-3.5" />
-              <span className="text-[11px]">Sort Projects</span>
-            </button>
-          )}
-
+        {/* Right: Editor Actions */}
+        <div className="flex items-center gap-1.5 py-1 shrink-0">
           <button
+            type="button"
             onClick={() => setWrapLines(!wrapLines)}
-            title={wrapLines ? 'Disable line wrap' : 'Enable line wrap'}
-            className={`p-1 border text-xs cursor-pointer rounded-none transition-colors ${
+            aria-pressed={wrapLines}
+            title={wrapLines ? 'Turn line wrap off' : 'Turn line wrap on'}
+            className={`govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors ${
               wrapLines
-                ? 'bg-govuk-blue text-white border-govuk-blue-dark'
-                : 'bg-white dark:bg-zinc-800 border-govuk-grey-border dark:border-zinc-700 text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey dark:hover:bg-zinc-700'
+                ? 'border-2 border-govuk-black dark:border-white bg-[#e5e5e4] dark:bg-zinc-800'
+                : ''
             }`}
           >
             <WrapText className="w-3.5 h-3.5" />
+            <span>Wrap lines</span>
           </button>
 
           <button
+            type="button"
             onClick={handlePaste}
-            title="Paste from clipboard"
-            className="govuk-button--secondary text-xs px-1.5 py-0.5 flex items-center gap-1 cursor-pointer"
+            title="Paste YAML from clipboard"
+            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0"
           >
             <Clipboard className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Paste</span>
+            <span>Paste</span>
           </button>
 
           <button
+            type="button"
             onClick={handleClear}
-            title="Clear editor"
-            className="govuk-button--secondary text-xs px-1.5 py-0.5 flex items-center gap-1 cursor-pointer hover:bg-govuk-red-tint! hover:text-govuk-red!"
+            disabled={!value}
+            title={value ? 'Clear editor content' : 'Editor is already empty'}
+            className="govuk-button--warning text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Trash2 className="w-3.5 h-3.5 text-govuk-red" />
-            <span className="text-[11px]">Clear</span>
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear</span>
           </button>
         </div>
       </div>
