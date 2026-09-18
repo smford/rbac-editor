@@ -136,6 +136,38 @@
   background-color: #ffffff;
 }
 
+/* GDS Back Link */
+.govuk-back-link {
+  font-size: 0.875rem;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  color: #0b0c0c;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.govuk-back-link:hover {
+  text-decoration-thickness: 3px;
+}
+.govuk-back-link:focus-visible {
+  outline: 3px solid transparent;
+  background-color: #ffdd00;
+  color: #0b0c0c;
+  box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c;
+  text-decoration: none;
+}
+.dark .govuk-back-link {
+  color: #f3f2f1;
+}
+
 /* GDS Form Controls */
 .govuk-input {
   border: 2px solid #0b0c0c;

@@ -8,6 +8,7 @@ import {
   Search,
   Key,
   ExternalLink,
+  ChevronLeft,
 } from 'lucide-react';
 import { ValidationResult } from '../../types/yaml';
 import { addProjectAndEnvironmentToYaml, ProjectUserAssignment } from '../../utils/yamlValidator';
@@ -228,6 +229,19 @@ export const AddProjectTab: React.FC<AddProjectTabProps> = ({
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
+      {onSwitchToDirectory && (
+        <div className="pt-0.5">
+          <button
+            type="button"
+            onClick={onSwitchToDirectory}
+            className="govuk-back-link"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Back to Users &amp; Access</span>
+          </button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 space-y-1">
         <div className="flex items-center gap-3">

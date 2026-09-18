@@ -16,6 +16,7 @@ import {
   Key,
   X,
   Zap,
+  UserPlus,
 } from 'lucide-react';
 import { ValidationResult, RbacUser } from '../../types/yaml';
 import { buildProjectHierarchy } from '../../utils/yamlValidator';
@@ -25,6 +26,7 @@ interface UserDirectoryTabProps {
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
   onSortProjects?: (targetAnchor?: string) => void;
+  onOpenAddUser?: () => void;
   onOpenAddProject?: () => void;
   initialStatFilter?: 'all' | 'super' | 'power' | 'projects';
   initialProjectsViewMode?: 'by-project' | 'hierarchy' | 'by-count';
@@ -233,6 +235,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
   onJumpToLine,
   onSortUsers,
   onSortProjects,
+  onOpenAddUser,
   onOpenAddProject,
   initialStatFilter,
   initialProjectsViewMode,
@@ -398,12 +401,24 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               <span>Project Hierarchy</span>
             </button>
 
+            {onOpenAddUser && (
+              <button
+                type="button"
+                onClick={onOpenAddUser}
+                title="Add a new user"
+                className="govuk-button inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add User</span>
+              </button>
+            )}
+
             {onOpenAddProject && (
               <button
                 type="button"
                 onClick={onOpenAddProject}
                 title="Add a new project and environment with user access"
-                className="govuk-button inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
+                className="govuk-button--secondary inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 <span>Add Project &amp; Environment</span>
@@ -634,11 +649,22 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               </button>
             </div>
 
+            {onOpenAddUser && (
+              <button
+                type="button"
+                onClick={onOpenAddUser}
+                className="govuk-button text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1"
+              >
+                <UserPlus className="w-3 h-3" />
+                <span>Add User</span>
+              </button>
+            )}
+
             {onOpenAddProject && (
               <button
                 type="button"
                 onClick={onOpenAddProject}
-                className="govuk-button text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1"
+                className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1"
               >
                 <FolderPlus className="w-3 h-3" />
                 <span>Add Project</span>

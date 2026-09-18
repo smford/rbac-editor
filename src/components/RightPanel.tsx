@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   AlertCircle,
   GitFork,
@@ -6,7 +6,6 @@ import {
   Users,
   FileCheck,
   FolderPlus,
-  FolderTree,
 } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 import { DiagnosticsTab } from './tabs/DiagnosticsTab';
@@ -16,7 +15,7 @@ import { AddProjectTab } from './tabs/AddProjectTab';
 import { UserDirectoryTab } from './tabs/UserDirectoryTab';
 import { ResolvedTab } from './tabs/ResolvedTab';
 
-type RightPanelTab = 'diagnostics' | 'anchors' | 'adduser' | 'addproject' | 'directory' | 'hierarchy' | 'resolved';
+export type RightPanelTab = 'diagnostics' | 'anchors' | 'directory' | 'resolved' | 'adduser' | 'addproject' | 'hierarchy';
 
 interface RightPanelProps {
   validationResult: ValidationResult;
@@ -25,6 +24,8 @@ interface RightPanelProps {
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
   onSortProjects?: (targetAnchor?: string) => void;
+  activeTab?: RightPanelTab;
+  onSelectTab?: (tab: RightPanelTab) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -34,19 +35,19 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onJumpToLine,
   onSortUsers,
   onSortProjects,
+  activeTab: controlledTab,
+  onSelectTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<RightPanelTab>('diagnostics');
+  const [internalTab, setInternalTab] = useState<RightPanelTab>('diagnostics');
+  const activeTab = controlledTab ?? internalTab;
+  const setActiveTab = (tab: RightPanelTab) => {
+    if (onSelectTab) onSelectTab(tab);
+    setInternalTab(tab);
+  };
 
   const errorCount = validationResult.issues.filter(i => i.severity === 'error').length;
   const warningCount = validationResult.issues.filter(i => i.severity === 'warning').length;
   const totalIssues = errorCount + warningCount;
-
-  // If there are errors, make sure user can easily see diagnostics
-  useEffect(() => {
-    if (errorCount > 0 && activeTab !== 'diagnostics' && activeTab !== 'adduser') {
-      // Keep current tab unless user wants to inspect
-    }
-  }, [errorCount, activeTab]);
 
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -92,35 +93,9 @@ export const RightPanel: React.FC<RightPanelProps> = ({
       ) : undefined,
     },
     {
-      id: 'adduser',
-      label: 'Add User',
-      icon: <UserPlus className="w-3.5 h-3.5" />,
-      tag: validationResult.isUsersConfig ? (
-        <span className="govuk-tag govuk-tag--purple text-[10px] py-0.2 px-1">
-          Wizard
-        </span>
-      ) : undefined,
-    },
-    {
-      id: 'addproject',
-      label: 'Add Project',
-      icon: <FolderPlus className="w-3.5 h-3.5" />,
-      tag: validationResult.isUsersConfig ? (
-        <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
-          Wizard
-        </span>
-      ) : undefined,
-    },
-    {
       id: 'directory',
-      label: `Users (${validationResult.stats.usersCount})`,
+      label: `Users & Access (${validationResult.stats.usersCount})`,
       icon: <Users className="w-3.5 h-3.5" />,
-      visible: validationResult.isUsersConfig,
-    },
-    {
-      id: 'hierarchy',
-      label: 'Project Hierarchy',
-      icon: <FolderTree className="w-3.5 h-3.5" />,
       visible: validationResult.isUsersConfig,
     },
     {
@@ -162,7 +137,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     <div className="h-full flex flex-col bg-white dark:bg-zinc-950 border-l border-govuk-grey-border dark:border-zinc-800 select-none transition-colors">
       {/* GOV.UK Tab Navigation Header */}
       <nav
-        className="px-2 pt-1.5 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-end shrink-0 overflow-x-auto overflow-y-hidden"
+        className="px-2 pt-1.5 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-end justify-between shrink-0 overflow-x-auto overflow-y-hidden"
         role="tablist"
         aria-label="Editor Views"
       >
@@ -195,6 +170,39 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             );
           })}
         </div>
+
+        {/* Action Buttons: Add User & Add Project */}
+        {validationResult.isUsersConfig && (
+          <div className="flex items-center gap-1.5 pb-1.5 shrink-0 ml-auto pl-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('adduser')}
+              title="Add a new user (Wizard)"
+              className={`text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1 cursor-pointer transition-colors ${
+                activeTab === 'adduser'
+                  ? 'govuk-button ring-2 ring-govuk-black'
+                  : 'govuk-button'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Add User</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('addproject')}
+              title="Add a new project & environment (Wizard)"
+              className={`text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1 cursor-pointer transition-colors ${
+                activeTab === 'addproject'
+                  ? 'govuk-button--secondary border-2 border-govuk-black'
+                  : 'govuk-button--secondary'
+              }`}
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>Add Project</span>
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Tab Content Body */}
@@ -225,6 +233,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             currentYaml={currentYaml}
             onUpdateYaml={onUpdateYaml}
             onJumpToLine={onJumpToLine}
+            onSwitchToDirectory={() => setActiveTab('directory')}
           />
         )}
         {activeTab === 'addproject' && (
@@ -236,24 +245,16 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onSwitchToDirectory={() => setActiveTab('directory')}
           />
         )}
-        {activeTab === 'directory' && (
+        {(activeTab === 'directory' || activeTab === 'hierarchy') && (
           <UserDirectoryTab
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
             onSortProjects={onSortProjects}
+            onOpenAddUser={() => setActiveTab('adduser')}
             onOpenAddProject={() => setActiveTab('addproject')}
-          />
-        )}
-        {activeTab === 'hierarchy' && (
-          <UserDirectoryTab
-            validationResult={validationResult}
-            onJumpToLine={onJumpToLine}
-            onSortUsers={onSortUsers}
-            onSortProjects={onSortProjects}
-            onOpenAddProject={() => setActiveTab('addproject')}
-            initialStatFilter="projects"
-            initialProjectsViewMode="hierarchy"
+            initialStatFilter={activeTab === 'hierarchy' ? 'projects' : undefined}
+            initialProjectsViewMode={activeTab === 'hierarchy' ? 'hierarchy' : undefined}
           />
         )}
         {activeTab === 'resolved' && (

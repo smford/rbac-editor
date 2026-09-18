@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import YAML from 'yaml';
 import { Header } from './components/Header';
 import { LeftPanel, LeftPanelHandle } from './components/LeftPanel';
-import { RightPanel } from './components/RightPanel';
+import { RightPanel, RightPanelTab } from './components/RightPanel';
 import { validateYaml, sortUsersInYaml, sortProjectsInPresetYaml } from './utils/yamlValidator';
 import { USERS_YAML_DEFAULT } from './data/defaultUsersYaml';
 
@@ -11,6 +11,8 @@ export const App: React.FC = () => {
   const [yamlContent, setYamlContent] = useState<string>(() => {
     return USERS_YAML_DEFAULT || '';
   });
+
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('diagnostics');
 
   // Default to GDS light mode
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -99,6 +101,14 @@ export const App: React.FC = () => {
     }
   }, [yamlContent]);
 
+  const handleOpenAddUser = useCallback(() => {
+    setRightPanelTab('adduser');
+  }, []);
+
+  const handleOpenAddProject = useCallback(() => {
+    setRightPanelTab('addproject');
+  }, []);
+
   // Resizable split divider drag handlers
   const handleMouseDown = () => {
     setIsResizing(true);
@@ -139,6 +149,8 @@ export const App: React.FC = () => {
         onDownloadYaml={handleDownloadYaml}
         onSortUsers={handleSortUsers}
         onSortProjects={handleSortProjects}
+        onOpenAddUser={handleOpenAddUser}
+        onOpenAddProject={handleOpenAddProject}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode(!darkMode)}
       />
@@ -187,6 +199,8 @@ export const App: React.FC = () => {
             onJumpToLine={handleJumpToLine}
             onSortUsers={handleSortUsers}
             onSortProjects={handleSortProjects}
+            activeTab={rightPanelTab}
+            onSelectTab={setRightPanelTab}
           />
         </section>
       </main>

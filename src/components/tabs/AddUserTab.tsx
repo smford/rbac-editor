@@ -12,6 +12,8 @@ import {
   Layers,
   ArrowDownAZ,
   Zap,
+  Users,
+  ChevronLeft,
 } from 'lucide-react';
 import { ValidationResult } from '../../types/yaml';
 import { generateUserSnippet, insertUserIntoYaml, sortUsersInYaml } from '../../utils/yamlValidator';
@@ -21,6 +23,7 @@ interface AddUserTabProps {
   currentYaml: string;
   onUpdateYaml: (newYaml: string) => void;
   onJumpToLine: (line: number, column?: number) => void;
+  onSwitchToDirectory?: () => void;
 }
 
 export const AddUserTab: React.FC<AddUserTabProps> = ({
@@ -28,6 +31,7 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
   currentYaml,
   onUpdateYaml,
   onJumpToLine,
+  onSwitchToDirectory,
 }) => {
   const usersMeta = validationResult.usersMetadata;
 
@@ -187,6 +191,19 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
+      {onSwitchToDirectory && (
+        <div className="pt-0.5">
+          <button
+            type="button"
+            onClick={onSwitchToDirectory}
+            className="govuk-back-link"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Back to Users &amp; Access</span>
+          </button>
+        </div>
+      )}
+
       {/* Header card */}
       <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -507,9 +524,21 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
         </div>
 
         {insertSuccessMsg && (
-          <div className="border-4 border-govuk-green bg-[#cce2d8]/40 dark:bg-emerald-950/20 text-[#005a30] dark:text-emerald-300 p-3 text-xs flex items-center gap-2 font-bold">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-govuk-green" />
-            <span>{insertSuccessMsg}</span>
+          <div className="border-4 border-govuk-green bg-[#cce2d8]/40 dark:bg-emerald-950/20 text-[#005a30] dark:text-emerald-300 p-3 text-xs flex flex-wrap items-center justify-between gap-2 font-bold">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-govuk-green" />
+              <span>{insertSuccessMsg}</span>
+            </div>
+            {onSwitchToDirectory && (
+              <button
+                type="button"
+                onClick={onSwitchToDirectory}
+                className="govuk-button--secondary text-xs px-3 py-1 flex items-center gap-1.5 cursor-pointer ml-auto"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>View in User Directory</span>
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -12,6 +12,8 @@ import {
   Code,
   Sparkles,
   ArrowDownAZ,
+  UserPlus,
+  FolderPlus,
 } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
@@ -23,6 +25,8 @@ interface HeaderProps {
   onDownloadYaml: () => void;
   onSortUsers: () => void;
   onSortProjects?: (targetAnchor?: string) => void;
+  onOpenAddUser?: () => void;
+  onOpenAddProject?: () => void;
   darkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -35,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onDownloadYaml,
   onSortUsers,
   onSortProjects,
+  onOpenAddUser,
+  onOpenAddProject,
   darkMode,
   onToggleTheme,
 }) => {
@@ -175,6 +181,30 @@ export const Header: React.FC<HeaderProps> = ({
             <Code className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Format</span>
           </button>
+
+          {/* Add User Wizard Button */}
+          {validationResult.isUsersConfig && onOpenAddUser && (
+            <button
+              onClick={onOpenAddUser}
+              title="Add a new user (Wizard)"
+              className="govuk-button text-xs px-2.5 py-1.5 flex items-center gap-1.5 cursor-pointer font-bold"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Add User</span>
+            </button>
+          )}
+
+          {/* Add Project Wizard Button */}
+          {validationResult.isUsersConfig && onOpenAddProject && (
+            <button
+              onClick={onOpenAddProject}
+              title="Add a new project & environment (Wizard)"
+              className="govuk-button--secondary text-xs px-2.5 py-1.5 flex items-center gap-1.5 cursor-pointer font-bold"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>Add Project</span>
+            </button>
+          )}
 
           {/* Sort Users Alphabetically */}
           {validationResult.isUsersConfig && (
