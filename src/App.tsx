@@ -3,7 +3,7 @@ import YAML from 'yaml';
 import { Header } from './components/Header';
 import { LeftPanel, LeftPanelHandle } from './components/LeftPanel';
 import { RightPanel } from './components/RightPanel';
-import { validateYaml, sortUsersInYaml } from './utils/yamlValidator';
+import { validateYaml, sortUsersInYaml, sortProjectsInPresetYaml } from './utils/yamlValidator';
 import { USERS_YAML_DEFAULT } from './data/defaultUsersYaml';
 
 export const App: React.FC = () => {
@@ -88,6 +88,17 @@ export const App: React.FC = () => {
     }
   }, [yamlContent]);
 
+  // Sort projects in preset anchors (all_projects_admin & all_projects_non_prod_admin) alphabetically
+  const handleSortProjects = useCallback((targetAnchor?: string) => {
+    const res = sortProjectsInPresetYaml(
+      yamlContent,
+      targetAnchor ? [targetAnchor] : undefined
+    );
+    if (res.changed) {
+      setYamlContent(res.updatedYaml);
+    }
+  }, [yamlContent]);
+
   // Resizable split divider drag handlers
   const handleMouseDown = () => {
     setIsResizing(true);
@@ -127,6 +138,7 @@ export const App: React.FC = () => {
         onCopyYaml={handleCopyYaml}
         onDownloadYaml={handleDownloadYaml}
         onSortUsers={handleSortUsers}
+        onSortProjects={handleSortProjects}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode(!darkMode)}
       />
@@ -149,6 +161,7 @@ export const App: React.FC = () => {
             validationResult={validationResult}
             darkMode={darkMode}
             onSortUsers={handleSortUsers}
+            onSortProjects={handleSortProjects}
           />
         </section>
 
@@ -173,6 +186,7 @@ export const App: React.FC = () => {
             onUpdateYaml={setYamlContent}
             onJumpToLine={handleJumpToLine}
             onSortUsers={handleSortUsers}
+            onSortProjects={handleSortProjects}
           />
         </section>
       </main>

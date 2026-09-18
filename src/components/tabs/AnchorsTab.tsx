@@ -11,17 +11,20 @@ import {
   Check,
   Layers,
   HelpCircle,
+  ArrowDownAZ,
 } from 'lucide-react';
 import { ValidationResult } from '../../types/yaml';
 
 interface AnchorsTabProps {
   validationResult: ValidationResult;
   onJumpToLine: (line: number, column?: number) => void;
+  onSortProjects?: (targetAnchor?: string) => void;
 }
 
 export const AnchorsTab: React.FC<AnchorsTabProps> = ({
   validationResult,
   onJumpToLine,
+  onSortProjects,
 }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'used' | 'unused' | 'merges'>('all');
@@ -69,13 +72,27 @@ export const AnchorsTab: React.FC<AnchorsTabProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => setShowGuide(!showGuide)}
-            className="govuk-button--secondary text-xs font-bold py-1 px-3 rounded-none inline-flex items-center gap-1.5"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>{showGuide ? 'Hide Guide' : 'YAML Anchors 101'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {(validationResult.hasPresetProjectAnchors || validationResult.usersMetadata?.hasPresetProjectAnchors) && onSortProjects && (
+              <button
+                type="button"
+                onClick={() => onSortProjects()}
+                title="Sort all projects alphabetically in all_projects_admin & all_projects_non_prod_admin"
+                className="govuk-button--secondary text-xs font-bold py-1 px-3 rounded-none inline-flex items-center gap-1.5"
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>Sort Preset Projects</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="govuk-button--secondary text-xs font-bold py-1 px-3 rounded-none inline-flex items-center gap-1.5"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>{showGuide ? 'Hide Guide' : 'YAML Anchors 101'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Quick Guide Accordion */}
@@ -289,6 +306,18 @@ export const AnchorsTab: React.FC<AnchorsTabProps> = ({
                           <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
+
+                      {(anchor.name === 'all_projects_admin' || anchor.name === 'all_projects_non_prod_admin') && onSortProjects && (
+                        <button
+                          type="button"
+                          onClick={() => onSortProjects(anchor.name)}
+                          title={`Sort projects alphabetically in &${anchor.name}`}
+                          className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1 font-mono text-govuk-black hover:bg-govuk-grey-border"
+                        >
+                          <ArrowDownAZ className="w-3.5 h-3.5 text-govuk-blue" />
+                          <span>Sort A-Z</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => onJumpToLine(anchor.line, anchor.column)}

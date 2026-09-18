@@ -22,6 +22,7 @@ interface HeaderProps {
   onCopyYaml: () => void;
   onDownloadYaml: () => void;
   onSortUsers: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
   darkMode: boolean;
   onToggleTheme: () => void;
 }
@@ -33,12 +34,19 @@ export const Header: React.FC<HeaderProps> = ({
   onCopyYaml,
   onDownloadYaml,
   onSortUsers,
+  onSortProjects,
   darkMode,
   onToggleTheme,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
   const [sorted, setSorted] = useState(false);
+  const [projectsSorted, setProjectsSorted] = useState(false);
+
+  const hasPresetProjects = Boolean(
+    validationResult.hasPresetProjectAnchors ??
+    validationResult.anchors.some(a => a.name === 'all_projects_admin' || a.name === 'all_projects_non_prod_admin')
+  );
 
   const errorCount = validationResult.issues.filter(i => i.severity === 'error').length;
   const warningCount = validationResult.issues.filter(i => i.severity === 'warning').length;
@@ -188,6 +196,31 @@ export const Header: React.FC<HeaderProps> = ({
                 <>
                   <ArrowDownAZ className="w-3.5 h-3.5" />
                   <span>Sort Users</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Sort Projects in Presets (all_projects_admin and all_projects_non_prod_admin) */}
+          {hasPresetProjects && onSortProjects && (
+            <button
+              onClick={() => {
+                onSortProjects();
+                setProjectsSorted(true);
+                setTimeout(() => setProjectsSorted(false), 2000);
+              }}
+              title="Sort all projects alphabetically in all_projects_admin and all_projects_non_prod_admin"
+              className="govuk-button--secondary text-xs px-2.5 py-1.5 flex items-center gap-1.5 cursor-pointer"
+            >
+              {projectsSorted ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-govuk-green" />
+                  <span>Projects Sorted</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDownAZ className="w-3.5 h-3.5" />
+                  <span>Sort Projects</span>
                 </>
               )}
             </button>

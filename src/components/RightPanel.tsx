@@ -24,6 +24,7 @@ interface RightPanelProps {
   onUpdateYaml: (newYaml: string) => void;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -32,6 +33,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onUpdateYaml,
   onJumpToLine,
   onSortUsers,
+  onSortProjects,
 }) => {
   const [activeTab, setActiveTab] = useState<RightPanelTab>('diagnostics');
 
@@ -188,12 +190,14 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
+            onSortProjects={onSortProjects}
           />
         )}
         {activeTab === 'anchors' && (
           <AnchorsTab
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
+            onSortProjects={onSortProjects}
           />
         )}
         {activeTab === 'adduser' && (
@@ -218,6 +222,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
+            onSortProjects={onSortProjects}
             onOpenAddProject={() => setActiveTab('addproject')}
           />
         )}
@@ -226,6 +231,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
+            onSortProjects={onSortProjects}
             onOpenAddProject={() => setActiveTab('addproject')}
             initialStatFilter="projects"
             initialProjectsViewMode="hierarchy"

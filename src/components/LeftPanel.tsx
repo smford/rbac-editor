@@ -15,6 +15,7 @@ interface LeftPanelProps {
   validationResult: ValidationResult;
   darkMode: boolean;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
 }
 
 export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
@@ -23,6 +24,7 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
   validationResult,
   darkMode,
   onSortUsers,
+  onSortProjects,
 }, ref) => {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const [wrapLines, setWrapLines] = useState(false);
@@ -144,6 +146,21 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             >
               <ArrowDownAZ className="w-3.5 h-3.5" />
               <span className="text-[11px]">Sort Users</span>
+            </button>
+          )}
+
+          {Boolean(validationResult.hasPresetProjectAnchors ?? validationResult.anchors.some(a => a.name === 'all_projects_admin' || a.name === 'all_projects_non_prod_admin')) && onSortProjects && (
+            <button
+              onClick={() => {
+                onSortProjects();
+                setJumpFeedback('Sorted projects A-Z');
+                setTimeout(() => setJumpFeedback(null), 2500);
+              }}
+              title="Sort all projects alphabetically in all_projects_admin and all_projects_non_prod_admin"
+              className="govuk-button--secondary text-xs px-2 py-0.5 flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowDownAZ className="w-3.5 h-3.5" />
+              <span className="text-[11px]">Sort Projects</span>
             </button>
           )}
 

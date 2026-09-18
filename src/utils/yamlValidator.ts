@@ -292,9 +292,10 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
     if (hasUsers || hasXRoles || hasXEnvs || hasXProjects) {
       isUsersConfig = true;
       usersMetadata = extractUsersMetadata(parsedData, lines, anchorMap);
+      usersMetadata.hasPresetProjectAnchors = hasPresetProjectAnchors(text);
 
       // Perform RBAC validation
-      validateUsersRbac(usersMetadata, issues);
+      validateUsersRbac(usersMetadata, issues, text);
     }
   }
 
@@ -326,6 +327,7 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
     stats,
     isUsersConfig,
     usersMetadata,
+    hasPresetProjectAnchors: hasPresetProjectAnchors(text),
   };
 }
 
@@ -606,7 +608,11 @@ function extractUsersMetadata(
 /**
  * Validates domain rules for users.yaml (duplicate usernames, naming patterns)
  */
-function validateUsersRbac(metadata: UsersMetadata, issues: ValidationIssue[]): void {
+function validateUsersRbac(
+  metadata: UsersMetadata,
+  issues: ValidationIssue[],
+  yamlText?: string
+): void {
   const seenUsernames = new Map<string, number>();
 
   for (const user of metadata.users) {
@@ -657,6 +663,26 @@ function validateUsersRbac(metadata: UsersMetadata, issues: ValidationIssue[]): 
         suggestion: `Use "Sort Users A-Z" to sort all users alphabetically.`,
       });
       break;
+    }
+  }
+
+  // Check alphabetical sorting of preset project lists (e.g. all_projects_admin & all_projects_non_prod_admin)
+  if (yamlText) {
+    const lines = yamlText.split('\n');
+    for (const anchorName of DEFAULT_PRESET_PROJECT_ANCHORS) {
+      const plan = findAnchorProjectSortPlan(lines, anchorName);
+      if (plan && !plan.isAlreadySorted) {
+        issues.push({
+          id: `preset-projects-not-sorted-${anchorName}`,
+          code: 'PROJECTS_NOT_ALPHABETICAL',
+          severity: 'info',
+          message: `Projects under &${anchorName} are not sorted alphabetically.`,
+          line: plan.startIndex + 1,
+          column: 1,
+          source: 'rbac',
+          suggestion: `Use "Sort Projects A-Z" to sort all projects alphabetically in preset anchors.`,
+        });
+      }
     }
   }
 }
@@ -887,6 +913,225 @@ export function sortUsersInYaml(yamlText: string): string {
   ].join('\n');
 }
 
+export function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export const DEFAULT_PRESET_PROJECT_ANCHORS = ['all_projects_admin', 'all_projects_non_prod_admin'];
+
+/**
+ * Checks if the YAML content contains any of the preset project anchors.
+ */
+export function hasPresetProjectAnchors(
+  yamlText: string,
+  targetAnchors: string[] = DEFAULT_PRESET_PROJECT_ANCHORS
+): boolean {
+  return targetAnchors.some(
+    anchor =>
+      yamlText.includes(`&${anchor}`) ||
+      new RegExp(`^\\s*${escapeRegExp(anchor)}:`, 'm').test(yamlText)
+  );
+}
+
+interface ProjectBlock {
+  name: string;
+  lines: string[];
+}
+
+interface AnchorSortPlan {
+  anchorName: string;
+  startIndex: number;
+  endIndex: number;
+  projectBlocks: ProjectBlock[];
+  isAlreadySorted: boolean;
+}
+
+/**
+ * Finds project items under an anchor block and creates a plan for sorting them.
+ */
+export function findAnchorProjectSortPlan(lines: string[], anchorName: string): AnchorSortPlan | null {
+  // Locate the anchor definition line
+  const anchorLineIdx = lines.findIndex(l => {
+    // Exclude alias references like `projects: *all_projects_admin`
+    if (/^\s*-\s*.*?\*\b/.test(l) || /:\s*\*\b/.test(l)) return false;
+    return (
+      l.includes(`&${anchorName}`) ||
+      new RegExp(`^\\s*${escapeRegExp(anchorName)}:\\s*(?:&${escapeRegExp(anchorName)})?\\s*$`).test(l)
+    );
+  });
+
+  if (anchorLineIdx === -1) return null;
+  const anchorIndent = lines[anchorLineIdx].search(/\S/);
+
+  // Find the first project item (`- name: ...`)
+  let firstItemIdx = -1;
+  let baseIndent = '';
+  let firstProjectName = '';
+
+  for (let i = anchorLineIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().length === 0 || line.trim().startsWith('#')) continue;
+
+    const currentIndent = line.search(/\S/);
+    if (currentIndent <= anchorIndent) {
+      // Exited anchor block without finding any list item
+      break;
+    }
+
+    const itemMatch = line.match(/^(\s*)-\s*name:\s*["']?([^"'\r\n#]+?)["']?\s*(?:#.*)?$/);
+    if (itemMatch) {
+      firstItemIdx = i;
+      baseIndent = itemMatch[1];
+      firstProjectName = itemMatch[2].trim();
+      break;
+    }
+  }
+
+  if (firstItemIdx === -1) return null;
+
+  const projectBlocks: ProjectBlock[] = [];
+  let currentBlock: ProjectBlock = {
+    name: firstProjectName,
+    lines: [lines[firstItemIdx]],
+  };
+  let lastItemLineIdx = firstItemIdx;
+
+  for (let j = firstItemIdx + 1; j < lines.length; j++) {
+    const line = lines[j];
+
+    // Check if new item starts at baseIndent
+    const isNewItem = line.match(
+      new RegExp(`^${escapeRegExp(baseIndent)}-\\s*name:\\s*["']?([^"'\\r\\n#]+?)["']?\\s*(?:#.*)?$`)
+    );
+
+    if (isNewItem) {
+      projectBlocks.push(currentBlock);
+      currentBlock = {
+        name: isNewItem[1].trim(),
+        lines: [line],
+      };
+      lastItemLineIdx = j;
+      continue;
+    }
+
+    // Check if we exited the list
+    if (line.trim().length > 0) {
+      const lineIndent = line.search(/\S/);
+      if (lineIndent <= anchorIndent || line.startsWith('---')) {
+        break;
+      }
+      if (lineIndent <= baseIndent.length && !line.startsWith(baseIndent + ' ')) {
+        break;
+      }
+    }
+
+    currentBlock.lines.push(line);
+    if (line.trim().length > 0) {
+      lastItemLineIdx = j;
+    }
+  }
+
+  if (currentBlock) {
+    projectBlocks.push(currentBlock);
+  }
+
+  if (projectBlocks.length <= 1) {
+    return {
+      anchorName,
+      startIndex: firstItemIdx,
+      endIndex: lastItemLineIdx + 1,
+      projectBlocks,
+      isAlreadySorted: true,
+    };
+  }
+
+  // Trim trailing empty lines from the last block that were beyond lastItemLineIdx
+  const endIndex = lastItemLineIdx + 1;
+  const lastBlock = projectBlocks[projectBlocks.length - 1];
+  while (lastBlock.lines.length > 0 && lastBlock.lines[lastBlock.lines.length - 1].trim() === '') {
+    lastBlock.lines.pop();
+  }
+
+  // Check if already sorted
+  let isAlreadySorted = true;
+  for (let k = 0; k < projectBlocks.length - 1; k++) {
+    if (projectBlocks[k].name.toLowerCase().localeCompare(projectBlocks[k + 1].name.toLowerCase()) > 0) {
+      isAlreadySorted = false;
+      break;
+    }
+  }
+
+  return {
+    anchorName,
+    startIndex: firstItemIdx,
+    endIndex,
+    projectBlocks,
+    isAlreadySorted,
+  };
+}
+
+/**
+ * Sorts all project items under preset anchors (e.g. `all_projects_admin` and `all_projects_non_prod_admin`)
+ * alphabetically by project name (A-Z).
+ * Preserves indentation, environment references, nested mapping structures, comments, and document spacing.
+ */
+export function sortProjectsInPresetYaml(
+  yamlText: string,
+  targetAnchors: string[] = DEFAULT_PRESET_PROJECT_ANCHORS
+): {
+  updatedYaml: string;
+  changed: boolean;
+  totalSorted: number;
+  sortedAnchors: string[];
+} {
+  const lines = yamlText.split('\n');
+  const plans: AnchorSortPlan[] = [];
+
+  for (const anchorName of targetAnchors) {
+    const plan = findAnchorProjectSortPlan(lines, anchorName);
+    if (plan && !plan.isAlreadySorted) {
+      plans.push(plan);
+    }
+  }
+
+  if (plans.length === 0) {
+    return {
+      updatedYaml: yamlText,
+      changed: false,
+      totalSorted: 0,
+      sortedAnchors: [],
+    };
+  }
+
+  // Sort plans by startIndex descending so replacements don't shift line indices of earlier anchors
+  plans.sort((a, b) => b.startIndex - a.startIndex);
+
+  let totalSorted = 0;
+  const sortedAnchors: string[] = [];
+
+  for (const plan of plans) {
+    const sortedBlocks = [...plan.projectBlocks].sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    );
+
+    const replacementLines: string[] = [];
+    sortedBlocks.forEach(b => {
+      replacementLines.push(...b.lines);
+    });
+
+    lines.splice(plan.startIndex, plan.endIndex - plan.startIndex, ...replacementLines);
+    totalSorted += sortedBlocks.length;
+    sortedAnchors.push(plan.anchorName);
+  }
+
+  return {
+    updatedYaml: lines.join('\n'),
+    changed: true,
+    totalSorted,
+    sortedAnchors,
+  };
+}
+
 export interface ProjectUserAssignment {
   username: string;
   roles: string[];
@@ -904,10 +1149,6 @@ export interface AddProjectResult {
   updatedYaml: string;
   updatedUsersCount: number;
   firstModifiedLine: number;
-}
-
-function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

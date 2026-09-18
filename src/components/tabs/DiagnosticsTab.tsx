@@ -14,12 +14,14 @@ interface DiagnosticsTabProps {
   validationResult: ValidationResult;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
 }
 
 export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
   validationResult,
   onJumpToLine,
   onSortUsers,
+  onSortProjects,
 }) => {
   const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
 
@@ -183,6 +185,7 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
               issue={issue}
               onJumpToLine={onJumpToLine}
               onSortUsers={onSortUsers}
+              onSortProjects={onSortProjects}
             />
           ))}
         </div>
@@ -195,7 +198,8 @@ const IssueCard: React.FC<{
   issue: ValidationIssue;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
-}> = ({ issue, onJumpToLine, onSortUsers }) => {
+  onSortProjects?: (targetAnchor?: string) => void;
+}> = ({ issue, onJumpToLine, onSortUsers, onSortProjects }) => {
   const getSeverityBadge = (sev: IssueSeverity) => {
     switch (sev) {
       case 'error':
@@ -283,6 +287,23 @@ const IssueCard: React.FC<{
           >
             <ArrowDownAZ className="w-3.5 h-3.5" />
             <span>Sort Users Alphabetically Now</span>
+          </button>
+        </div>
+      )}
+
+      {onSortProjects && (issue.code === 'PROJECTS_NOT_ALPHABETICAL' || issue.id.startsWith('projects-not-sorted')) && (
+        <div className="mt-2.5 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              onSortProjects();
+            }}
+            title="Sort all preset projects alphabetically in YAML"
+            className="govuk-button text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
+          >
+            <ArrowDownAZ className="w-3.5 h-3.5" />
+            <span>Sort Projects Alphabetically Now</span>
           </button>
         </div>
       )}

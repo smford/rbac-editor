@@ -98,6 +98,7 @@ export interface UsersMetadata {
   knownEnvironments: string[];
   knownRoles: string[];
   allAnchorNames: string[];
+  hasPresetProjectAnchors?: boolean;
 }
 
 export interface ValidationStats {
@@ -125,4 +126,5 @@ export interface ValidationResult {
   stats: ValidationStats;
   isUsersConfig: boolean;
   usersMetadata?: UsersMetadata;
+  hasPresetProjectAnchors?: boolean;
 }

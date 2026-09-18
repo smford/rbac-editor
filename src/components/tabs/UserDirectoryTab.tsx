@@ -24,6 +24,7 @@ interface UserDirectoryTabProps {
   validationResult: ValidationResult;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
   onOpenAddProject?: () => void;
   initialStatFilter?: 'all' | 'super' | 'power' | 'projects';
   initialProjectsViewMode?: 'by-project' | 'hierarchy' | 'by-count';
@@ -231,6 +232,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
   validationResult,
   onJumpToLine,
   onSortUsers,
+  onSortProjects,
   onOpenAddProject,
   initialStatFilter,
   initialProjectsViewMode,
@@ -422,6 +424,22 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               >
                 <ArrowDownAZ className="w-3.5 h-3.5" />
                 <span>Sort Users in YAML</span>
+              </button>
+            )}
+
+            {onSortProjects && (validationResult.hasPresetProjectAnchors || usersMeta?.hasPresetProjectAnchors) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSortProjects();
+                  setFeedbackMsg('All projects in all_projects_admin and all_projects_non_prod_admin have been sorted alphabetically!');
+                  setTimeout(() => setFeedbackMsg(null), 3500);
+                }}
+                title="Sort all projects alphabetically in all_projects_admin & all_projects_non_prod_admin"
+                className="govuk-button--secondary inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>Sort Preset Projects</span>
               </button>
             )}
           </div>
@@ -624,6 +642,22 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               >
                 <FolderPlus className="w-3 h-3" />
                 <span>Add Project</span>
+              </button>
+            )}
+
+            {onSortProjects && (validationResult.hasPresetProjectAnchors || usersMeta?.hasPresetProjectAnchors) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSortProjects();
+                  setFeedbackMsg('All projects in all_projects_admin and all_projects_non_prod_admin have been sorted alphabetically!');
+                  setTimeout(() => setFeedbackMsg(null), 3500);
+                }}
+                title="Sort all projects alphabetically in all_projects_admin & all_projects_non_prod_admin"
+                className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1"
+              >
+                <ArrowDownAZ className="w-3 h-3" />
+                <span>Sort Preset Projects</span>
               </button>
             )}
 

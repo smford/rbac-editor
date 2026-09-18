@@ -5,6 +5,8 @@ import {
   generateUserSnippet,
   insertUserIntoYaml,
   sortUsersInYaml,
+  sortProjectsInPresetYaml,
+  hasPresetProjectAnchors,
   addProjectAndEnvironmentToYaml,
   buildProjectHierarchy,
 } from './yamlValidator';
@@ -526,5 +528,114 @@ users:
     const filtered = buildProjectHierarchy(res.usersMetadata?.users || [], res.usersMetadata?.knownProjects, 'alice');
     expect(filtered).toHaveLength(2);
     expect(filtered.some(p => p.projectName === 'chat-service')).toBe(true);
+  });
+
+  it('should detect preset project anchors with hasPresetProjectAnchors', () => {
+    expect(hasPresetProjectAnchors(USERS_YAML_DEFAULT)).toBe(true);
+    expect(hasPresetProjectAnchors('name: sample\nfoo: bar')).toBe(false);
+  });
+
+  it('should sort projects alphabetically in all_projects_admin and all_projects_non_prod_admin', () => {
+    const unorderedYaml = `---
+x-roles:
+  admin_role: &admin_role
+    - admin
+    - readonly
+
+x-environments:
+  admin_everywhere: &admin_everywhere
+    - name: dev
+      roles: *admin_role
+  admin_non_prod: &admin_non_prod
+    - name: dev
+      roles: *admin_role
+
+x-projects:
+  all_projects_admin: &all_projects_admin
+    - name: zebra-service
+      environments: *admin_everywhere
+    - name: beta-service
+      environments: *admin_everywhere
+    - name: alpha-service
+      environments: *admin_everywhere
+
+  all_projects_non_prod_admin: &all_projects_non_prod_admin
+    - name: yellow-service
+      environments: *admin_non_prod
+    - name: apple-service
+      environments: *admin_non_prod
+
+users:
+  - username: test.user
+    projects: *all_projects_admin
+`;
+
+    // 1. Check validator detects out-of-order projects
+    const beforeValidation = validateYaml(unorderedYaml);
+    const orderIssues = beforeValidation.issues.filter(i => i.code === 'PROJECTS_NOT_ALPHABETICAL');
+    expect(orderIssues.length).toBe(2);
+    expect(orderIssues.some(i => i.message.includes('all_projects_admin'))).toBe(true);
+    expect(orderIssues.some(i => i.message.includes('all_projects_non_prod_admin'))).toBe(true);
+
+    // 2. Sort both preset anchors
+    const sortResult = sortProjectsInPresetYaml(unorderedYaml);
+    expect(sortResult.changed).toBe(true);
+    expect(sortResult.totalSorted).toBe(5);
+    expect(sortResult.sortedAnchors).toContain('all_projects_admin');
+    expect(sortResult.sortedAnchors).toContain('all_projects_non_prod_admin');
+
+    // 3. Verify order in updated YAML
+    const lines = sortResult.updatedYaml.split('\n');
+    const allAdminIdx = lines.findIndex(l => l.includes('all_projects_admin: &all_projects_admin'));
+    const allNonProdIdx = lines.findIndex(l => l.includes('all_projects_non_prod_admin: &all_projects_non_prod_admin'));
+
+    expect(allAdminIdx).toBeGreaterThan(-1);
+    expect(allNonProdIdx).toBeGreaterThan(allAdminIdx);
+
+    // In all_projects_admin: alpha-service -> beta-service -> zebra-service
+    const adminSegment = lines.slice(allAdminIdx, allNonProdIdx).join('\n');
+    const alphaPos = adminSegment.indexOf('name: alpha-service');
+    const betaPos = adminSegment.indexOf('name: beta-service');
+    const zebraPos = adminSegment.indexOf('name: zebra-service');
+    expect(alphaPos).toBeLessThan(betaPos);
+    expect(betaPos).toBeLessThan(zebraPos);
+
+    // In all_projects_non_prod_admin: apple-service -> yellow-service
+    const nonProdSegment = lines.slice(allNonProdIdx).join('\n');
+    const applePos = nonProdSegment.indexOf('name: apple-service');
+    const yellowPos = nonProdSegment.indexOf('name: yellow-service');
+    expect(applePos).toBeLessThan(yellowPos);
+
+    // 4. Validate updated YAML has 0 project order issues and is valid
+    const afterValidation = validateYaml(sortResult.updatedYaml);
+    expect(afterValidation.isValid).toBe(true);
+    const orderIssuesAfter = afterValidation.issues.filter(i => i.code === 'PROJECTS_NOT_ALPHABETICAL');
+    expect(orderIssuesAfter).toHaveLength(0);
+  });
+
+  it('should allow sorting a single preset anchor individually', () => {
+    const unorderedYaml = `---
+x-projects:
+  all_projects_admin: &all_projects_admin
+    - name: zulu
+      environments: *admin_everywhere
+    - name: alpha
+      environments: *admin_everywhere
+
+  all_projects_non_prod_admin: &all_projects_non_prod_admin
+    - name: zulu
+      environments: *admin_non_prod
+    - name: alpha
+      environments: *admin_non_prod
+`;
+
+    const sortAdminOnly = sortProjectsInPresetYaml(unorderedYaml, ['all_projects_admin']);
+    expect(sortAdminOnly.changed).toBe(true);
+    expect(sortAdminOnly.sortedAnchors).toEqual(['all_projects_admin']);
+
+    // all_projects_admin is sorted
+    expect(sortAdminOnly.updatedYaml.indexOf('name: alpha')).toBeLessThan(
+      sortAdminOnly.updatedYaml.indexOf('name: zulu')
+    );
   });
 });
