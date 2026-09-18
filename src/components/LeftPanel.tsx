@@ -111,18 +111,18 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
       }`}
     >
       {/* Editor Sub-Header */}
-      <div className="min-h-[42px] px-3 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none gap-2 flex-wrap sm:flex-nowrap">
+      <div className="h-11 px-3 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none gap-2 overflow-x-auto overflow-y-hidden">
         {/* Left: Heading and Metadata */}
-        <div className="flex items-center gap-2 flex-wrap py-1">
-          <h2 className="text-xs font-bold text-govuk-black dark:text-zinc-100">
+        <div className="flex items-center gap-2 shrink-0">
+          <h2 className="text-xs font-bold text-govuk-black dark:text-zinc-100 whitespace-nowrap">
             YAML editor
           </h2>
-          <span className="text-xs text-[#505a5f] dark:text-zinc-400">
+          <span className="text-xs text-[#505a5f] dark:text-zinc-400 whitespace-nowrap">
             ({validationResult.stats.lines} lines · {formatSize(validationResult.stats.bytes)})
           </span>
 
           {jumpFeedback && (
-            <strong className="govuk-tag govuk-tag--green inline-flex items-center gap-1 text-[11px] py-0.5 px-2">
+            <strong className="govuk-tag govuk-tag--green inline-flex items-center gap-1 text-[11px] py-0.5 px-2 whitespace-nowrap">
               <ArrowDownToLine className="w-3 h-3" />
               <span>{jumpFeedback}</span>
             </strong>
@@ -130,13 +130,13 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
         </div>
 
         {/* Right: Editor Actions */}
-        <div className="flex items-center gap-1.5 py-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setWrapLines(!wrapLines)}
             aria-pressed={wrapLines}
             title={wrapLines ? 'Turn line wrap off' : 'Turn line wrap on'}
-            className={`govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors ${
+            className={`govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors whitespace-nowrap ${
               wrapLines
                 ? 'border-2 border-govuk-black dark:border-white bg-[#e5e5e4] dark:bg-zinc-800'
                 : ''
@@ -150,7 +150,7 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             type="button"
             onClick={handlePaste}
             title="Paste YAML from clipboard"
-            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0"
+            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 whitespace-nowrap"
           >
             <Clipboard className="w-3.5 h-3.5" />
             <span>Paste</span>
@@ -161,7 +161,7 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             onClick={handleClear}
             disabled={!value}
             title={value ? 'Clear editor content' : 'Editor is already empty'}
-            className="govuk-button--warning text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="govuk-button--warning text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Clear</span>
