@@ -83,7 +83,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             )}
           </button>
 
-          {/* Anchors & Aliases Tab */}
+          {/* Anchors Tab */}
           <button
             onClick={() => setActiveTab('anchors')}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-xs transition-all cursor-pointer ${
@@ -93,7 +93,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             }`}
           >
             <GitFork className="w-3.5 h-3.5" />
-            <span>Anchors &amp; Merges</span>
+            <span>Anchors</span>
             {validationResult.stats.anchorCount > 0 && (
               <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
                 {validationResult.stats.anchorCount}
