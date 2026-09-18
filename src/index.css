@@ -33,6 +33,7 @@
   background-color: #00703c;
   color: #ffffff;
   box-shadow: 0 2px 0 #002d18;
+  border: 1px solid transparent;
   font-weight: 700;
   border-radius: 0px;
   transition: background-color 0.1s ease-in-out;
@@ -73,6 +74,7 @@
   background-color: #d4351c;
   color: #ffffff;
   box-shadow: 0 2px 0 #55150b;
+  border: 1px solid transparent;
   font-weight: 700;
   border-radius: 0px;
 }

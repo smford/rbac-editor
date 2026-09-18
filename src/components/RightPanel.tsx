@@ -137,11 +137,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     <div className="h-full flex flex-col bg-white dark:bg-zinc-950 border-l border-govuk-grey-border dark:border-zinc-800 select-none transition-colors">
       {/* GOV.UK Tab Navigation Header */}
       <nav
-        className="h-11 px-2 pt-1 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-end justify-between shrink-0 overflow-x-auto overflow-y-hidden"
+        className="h-11 px-2 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between shrink-0 overflow-x-auto overflow-y-hidden"
         role="tablist"
         aria-label="Editor Views"
       >
-        <div className="flex items-end gap-1 min-w-max pb-0 -mb-[2px]">
+        <div className="self-end flex items-end gap-1 min-w-max pb-0 -mb-[2px]">
           {visibleTabs.map((tab, idx) => {
             const isActive = activeTab === tab.id;
             return (
@@ -157,7 +157,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
                 tabIndex={0}
                 onClick={() => setActiveTab(tab.id)}
                 onKeyDown={e => handleTabKeyDown(e, idx)}
-                className={`group relative h-[40px] inline-flex items-center gap-1.5 px-3.5 text-xs cursor-pointer transition-colors border-t-4 select-none shrink-0 ${
+                className={`group relative h-[38px] inline-flex items-center gap-1.5 px-3.5 text-xs cursor-pointer transition-colors border-t-4 select-none shrink-0 ${
                   isActive
                     ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 border-b-2 border-b-white dark:border-b-zinc-950 z-10'
                     : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 border-t-transparent border-x border-transparent border-b-2 border-b-transparent font-medium'
@@ -173,18 +173,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
 
         {/* Action Buttons: Add User & Add Project */}
         {validationResult.isUsersConfig && (
-          <div className="flex items-center gap-1.5 pb-1 shrink-0 ml-auto pl-2">
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto pl-2">
             <button
               type="button"
               onClick={() => setActiveTab('adduser')}
               title="Add a new user (Wizard)"
-              className={`text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
+              className={`h-7 px-2.5 text-xs font-bold rounded-none mb-0 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
                 activeTab === 'adduser'
-                  ? 'govuk-button ring-2 ring-govuk-black'
+                  ? 'govuk-button ring-2 ring-govuk-black dark:ring-white'
                   : 'govuk-button'
               }`}
             >
-              <UserPlus className="w-3.5 h-3.5" />
+              <UserPlus className="w-3.5 h-3.5 shrink-0" />
               <span>Add User</span>
             </button>
 
@@ -192,13 +192,13 @@ export const RightPanel: React.FC<RightPanelProps> = ({
               type="button"
               onClick={() => setActiveTab('addproject')}
               title="Add a new project & environment (Wizard)"
-              className={`text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap ${
+              className={`h-7 px-2.5 text-xs font-bold rounded-none mb-0 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
                 activeTab === 'addproject'
-                  ? 'govuk-button--secondary border-2 border-govuk-black'
+                  ? 'govuk-button--secondary ring-2 ring-govuk-black dark:ring-white'
                   : 'govuk-button--secondary'
               }`}
             >
-              <FolderPlus className="w-3.5 h-3.5" />
+              <FolderPlus className="w-3.5 h-3.5 shrink-0" />
               <span>Add Project</span>
             </button>
           </div>

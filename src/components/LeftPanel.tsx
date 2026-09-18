@@ -136,13 +136,13 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             onClick={() => setWrapLines(!wrapLines)}
             aria-pressed={wrapLines}
             title={wrapLines ? 'Turn line wrap off' : 'Turn line wrap on'}
-            className={`govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors whitespace-nowrap ${
+            className={`h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors whitespace-nowrap govuk-button--secondary ${
               wrapLines
-                ? 'border-2 border-govuk-black dark:border-white bg-[#e5e5e4] dark:bg-zinc-800'
+                ? 'ring-2 ring-govuk-black dark:ring-white bg-[#e5e5e4] dark:bg-zinc-800'
                 : ''
             }`}
           >
-            <WrapText className="w-3.5 h-3.5" />
+            <WrapText className="w-3.5 h-3.5 shrink-0" />
             <span>Wrap lines</span>
           </button>
 
@@ -150,9 +150,9 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             type="button"
             onClick={handlePaste}
             title="Paste YAML from clipboard"
-            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 whitespace-nowrap"
+            className="h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 whitespace-nowrap govuk-button--secondary"
           >
-            <Clipboard className="w-3.5 h-3.5" />
+            <Clipboard className="w-3.5 h-3.5 shrink-0" />
             <span>Paste</span>
           </button>
 
@@ -161,9 +161,9 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             onClick={handleClear}
             disabled={!value}
             title={value ? 'Clear editor content' : 'Editor is already empty'}
-            className="govuk-button--warning text-xs font-bold py-1 px-2.5 inline-flex items-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            className="h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap govuk-button--warning"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />
             <span>Clear</span>
           </button>
         </div>
