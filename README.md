@@ -1,6 +1,6 @@
 # RBAC Editor • In-Browser YAML Validator & Access Manager
 
-> 🚀 **Live Interactive Demo**: **[http://stephenford.org/yaml-web-validator/](http://stephenford.org/yaml-web-validator/)**  
+> 🚀 **Live Interactive Demo**: **[https://stephenford.org/rbac-editor/](https://stephenford.org/rbac-editor/)**  
 > 🔒 **100% Client-Side Privacy**: Zero server transmission. All parsing, anchor evaluation, secret scanning, and validation happen entirely inside your browser.
 
 [![CI](https://github.com/smford/rbac-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/smford/rbac-editor/actions/workflows/ci.yml)
