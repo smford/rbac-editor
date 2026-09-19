@@ -298,8 +298,8 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
               onClick={() => setTemplateMode('preset_non_prod')}
               className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'preset_non_prod'
-                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
-                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c] dark:shadow-[0_0_0_2px_#ffffff]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800'
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
@@ -307,7 +307,7 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                 <span>Power Admin Preset</span>
               </div>
               <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
-                Admin in sandbox, dev &amp; staging. Reuses <code className="font-mono text-govuk-purple font-bold">*all_projects_non_prod_admin</code>
+                Admin in sandbox, dev &amp; staging. Reuses <code className="font-mono text-govuk-purple dark:text-purple-400 font-bold">*all_projects_non_prod_admin</code>
               </p>
             </button>
 
@@ -317,8 +317,8 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
               onClick={() => setTemplateMode('preset_all_admin')}
               className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'preset_all_admin'
-                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
-                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c] dark:shadow-[0_0_0_2px_#ffffff]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800'
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
@@ -326,7 +326,7 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
                 <span>Super Admin Preset</span>
               </div>
               <p className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 mt-1">
-                Admin in all projects &amp; all environments. Reuses <code className="font-mono text-govuk-purple font-bold">*all_projects_admin</code>
+                Admin in all projects &amp; all environments. Reuses <code className="font-mono text-govuk-purple dark:text-purple-400 font-bold">*all_projects_admin</code>
               </p>
             </button>
 
@@ -341,8 +341,8 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
               }}
               className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'clone_user'
-                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
-                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c] dark:shadow-[0_0_0_2px_#ffffff]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800'
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
@@ -360,8 +360,8 @@ export const AddUserTab: React.FC<AddUserTabProps> = ({
               onClick={() => setTemplateMode('custom')}
               className={`p-3 border-2 text-left cursor-pointer transition-all ${
                 templateMode === 'custom'
-                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c]'
-                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4]'
+                  ? 'border-govuk-black dark:border-white bg-white dark:bg-zinc-800 shadow-[0_0_0_2px_#0b0c0c] dark:shadow-[0_0_0_2px_#ffffff]'
+                  : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800'
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-xs text-govuk-black dark:text-zinc-100">
