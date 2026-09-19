@@ -5,20 +5,22 @@ import {
   Download,
   FileCode,
   Braces,
+  GitCompare,
   Info,
 } from 'lucide-react';
 import { ValidationResult } from '../../types/yaml';
 
 interface ResolvedTabProps {
   validationResult: ValidationResult;
+  currentYaml: string;
 }
 
-export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) => {
-  const [viewMode, setViewMode] = useState<'yaml' | 'json'>('yaml');
+export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult, currentYaml }) => {
+  const [viewMode, setViewMode] = useState<'yaml' | 'json' | 'diff'>('yaml');
   const [copied, setCopied] = useState(false);
 
   const { resolvedYaml, jsonString, isValid } = validationResult;
-  const content = viewMode === 'yaml' ? resolvedYaml : jsonString;
+  const content = viewMode === 'json' ? jsonString : resolvedYaml;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -27,8 +29,8 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
   };
 
   const handleDownload = () => {
-    const filename = viewMode === 'yaml' ? 'resolved-config.yaml' : 'resolved-config.json';
-    const mimeType = viewMode === 'yaml' ? 'text/yaml' : 'application/json';
+    const filename = viewMode === 'json' ? 'resolved-config.json' : 'resolved-config.yaml';
+    const mimeType = viewMode === 'json' ? 'application/json' : 'text/yaml';
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -64,14 +66,15 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
             </span>
           </h3>
           <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-0.5">
-            All anchors, aliases, and merge keys (&lt;&lt;) are fully evaluated into explicit values.
+            All anchors (&amp;), aliases (*), and merge keys (&lt;&lt;) are fully evaluated into explicit values.
           </p>
         </div>
 
         {/* View mode toggle & actions */}
-        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end">
+        <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto justify-end">
           <div className="flex items-center bg-govuk-grey dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-0.5 text-xs">
             <button
+              type="button"
               onClick={() => setViewMode('yaml')}
               className={`flex items-center gap-1 px-3 py-1 text-xs cursor-pointer ${
                 viewMode === 'yaml'
@@ -83,6 +86,7 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
               <span>YAML</span>
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('json')}
               className={`flex items-center gap-1 px-3 py-1 text-xs cursor-pointer ${
                 viewMode === 'json'
@@ -93,9 +97,22 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
               <Braces className="w-3.5 h-3.5" />
               <span>JSON</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('diff')}
+              className={`flex items-center gap-1 px-3 py-1 text-xs cursor-pointer ${
+                viewMode === 'diff'
+                  ? 'bg-govuk-black text-white font-bold'
+                  : 'text-govuk-black dark:text-zinc-300 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
+              }`}
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+              <span>Diff</span>
+            </button>
           </div>
 
           <button
+            type="button"
             onClick={handleCopy}
             className="govuk-button--secondary text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
           >
@@ -113,6 +130,7 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
           </button>
 
           <button
+            type="button"
             onClick={handleDownload}
             className="govuk-button text-xs px-3 py-1.5 flex items-center gap-1.5 cursor-pointer"
           >
@@ -122,16 +140,48 @@ export const ResolvedTab: React.FC<ResolvedTabProps> = ({ validationResult }) =>
         </div>
       </div>
 
-      {/* Code Viewer */}
-      <div className="flex-1 min-h-0 bg-govuk-grey dark:bg-black border border-govuk-grey-border dark:border-zinc-800 flex flex-col">
-        <div className="h-8 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-[#e5e5e4] dark:bg-zinc-900 flex items-center justify-between text-[11px] font-mono text-govuk-black dark:text-zinc-400">
-          <span className="font-bold">{viewMode === 'yaml' ? 'Resolved YAML (Pure Objects)' : 'Resolved JSON'}</span>
-          <span>{content.split('\n').length} lines</span>
+      {/* Code Viewer: Diff mode vs. Standard view */}
+      {viewMode === 'diff' ? (
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Left pane: Raw source YAML */}
+          <div className="flex flex-col bg-govuk-grey dark:bg-black border border-govuk-grey-border dark:border-zinc-800 overflow-hidden">
+            <div className="h-8 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-[#e5e5e4] dark:bg-zinc-900 flex items-center justify-between text-[11px] font-mono text-govuk-black dark:text-zinc-400 shrink-0">
+              <span className="font-bold flex items-center gap-1.5">
+                <span className="govuk-tag govuk-tag--blue text-[10px] py-0 px-1">Raw</span>
+                <span>Source YAML (&amp; Anchors &amp; &lt;&lt; Merges)</span>
+              </span>
+              <span>{currentYaml.split('\n').length} lines</span>
+            </div>
+            <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-govuk-black dark:text-zinc-300 leading-relaxed select-text">
+              {currentYaml}
+            </pre>
+          </div>
+
+          {/* Right pane: Fully dereferenced evaluated output */}
+          <div className="flex flex-col bg-govuk-grey dark:bg-black border border-govuk-grey-border dark:border-zinc-800 overflow-hidden">
+            <div className="h-8 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-[#e5e5e4] dark:bg-zinc-900 flex items-center justify-between text-[11px] font-mono text-govuk-black dark:text-zinc-400 shrink-0">
+              <span className="font-bold flex items-center gap-1.5">
+                <span className="govuk-tag govuk-tag--green text-[10px] py-0 px-1">Resolved</span>
+                <span>Evaluated Output (Pure Objects)</span>
+              </span>
+              <span>{resolvedYaml.split('\n').length} lines</span>
+            </div>
+            <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-govuk-black dark:text-zinc-300 leading-relaxed select-text">
+              {resolvedYaml}
+            </pre>
+          </div>
         </div>
-        <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-govuk-black dark:text-zinc-300 leading-relaxed select-text">
-          {content}
-        </pre>
-      </div>
+      ) : (
+        <div className="flex-1 min-h-0 bg-govuk-grey dark:bg-black border border-govuk-grey-border dark:border-zinc-800 flex flex-col">
+          <div className="h-8 px-3 border-b border-govuk-grey-border dark:border-zinc-800 bg-[#e5e5e4] dark:bg-zinc-900 flex items-center justify-between text-[11px] font-mono text-govuk-black dark:text-zinc-400">
+            <span className="font-bold">{viewMode === 'yaml' ? 'Resolved YAML (Pure Objects)' : 'Resolved JSON'}</span>
+            <span>{content.split('\n').length} lines</span>
+          </div>
+          <pre className="flex-1 min-h-0 p-3 overflow-auto text-xs font-mono text-govuk-black dark:text-zinc-300 leading-relaxed select-text">
+            {content}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };

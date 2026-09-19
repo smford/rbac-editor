@@ -7,6 +7,8 @@ import {
   Info,
   Lightbulb,
   ArrowDownAZ,
+  ShieldAlert,
+  Files,
 } from 'lucide-react';
 import { ValidationResult, ValidationIssue, IssueSeverity } from '../../types/yaml';
 
@@ -23,14 +25,16 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
   onSortUsers,
   onSortProjects,
 }) => {
-  const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
+  const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'security' | 'info'>('all');
 
   const { issues, isValid, stats } = validationResult;
   const errors = issues.filter(i => i.severity === 'error');
-  const warnings = issues.filter(i => i.severity === 'warning');
+  const warnings = issues.filter(i => i.severity === 'warning' && i.source !== 'security');
+  const securityIssues = issues.filter(i => i.source === 'security');
 
   const filteredIssues = issues.filter(i => {
     if (filter === 'all') return true;
+    if (filter === 'security') return i.source === 'security';
     return i.severity === filter;
   });
 
@@ -66,7 +70,7 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
                 YAML Syntax &amp; References are Valid
               </h3>
               <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-1">
-                Parsed in {stats.parseTimeMs}ms. All anchors, aliases, and merge keys are correctly structured.
+                Parsed in {stats.parseTimeMs}ms across {stats.documentCount || 1} {stats.documentCount === 1 ? 'document' : 'documents'}. All anchors, aliases, and merge keys are correctly structured.
               </p>
             </div>
           </div>
@@ -74,7 +78,7 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className={`grid grid-cols-2 ${stats.documentCount > 1 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-2`}>
         <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-3">
           <span className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 uppercase tracking-wider font-bold">
             Syntax Status
@@ -105,13 +109,17 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
 
         <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-3">
           <span className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 uppercase tracking-wider font-bold">
-            Unused Anchors
+            Security (Secrets)
           </span>
           <div className="text-sm font-bold mt-1 flex items-center gap-1.5">
-            {stats.unusedAnchorCount === 0 ? (
-              <span className="text-govuk-green">0 Dead Anchors</span>
+            {securityIssues.length === 0 ? (
+              <span className="text-govuk-green flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> 0 Secrets
+              </span>
             ) : (
-              <span className="text-govuk-text-secondary">{stats.unusedAnchorCount} Unused</span>
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <ShieldAlert className="w-3.5 h-3.5" /> {securityIssues.length} Plaintext
+              </span>
             )}
           </div>
         </div>
@@ -124,15 +132,27 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
             {stats.parseTimeMs} ms
           </div>
         </div>
+
+        {stats.documentCount > 1 && (
+          <div className="bg-white dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-3">
+            <span className="text-[11px] text-govuk-text-secondary dark:text-zinc-400 uppercase tracking-wider font-bold">
+              Stream Docs
+            </span>
+            <div className="text-sm font-bold mt-1 text-govuk-blue dark:text-sky-400 flex items-center gap-1">
+              <Files className="w-3.5 h-3.5" />
+              <span>{stats.documentCount} Docs</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Issues List Header & Filter */}
-      <div className="flex items-center justify-between pt-2 border-t border-govuk-grey-border dark:border-zinc-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-govuk-grey-border dark:border-zinc-800">
         <span className="text-xs font-bold text-govuk-black dark:text-zinc-200">
           Diagnostics &amp; Issues ({issues.length})
         </span>
 
-        <div className="flex items-center gap-1 bg-govuk-grey dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-0.5 text-xs">
+        <div className="flex flex-wrap items-center gap-1 bg-govuk-grey dark:bg-zinc-900 border border-govuk-grey-border dark:border-zinc-800 p-0.5 text-xs">
           <button
             onClick={() => setFilter('all')}
             className={`px-2.5 py-1 text-xs cursor-pointer ${
@@ -163,6 +183,17 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
           >
             Warnings ({warnings.length})
           </button>
+          <button
+            onClick={() => setFilter('security')}
+            className={`px-2.5 py-1 text-xs cursor-pointer inline-flex items-center gap-1 ${
+              filter === 'security'
+                ? 'bg-amber-600 text-white font-bold'
+                : 'text-amber-800 dark:text-amber-400 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 font-medium'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
+            <span>Security ({securityIssues.length})</span>
+          </button>
         </div>
       </div>
 
@@ -174,6 +205,8 @@ export const DiagnosticsTab: React.FC<DiagnosticsTabProps> = ({
           <p className="text-xs text-zinc-500 mt-1">
             {filter === 'all'
               ? 'Your YAML file is syntactically sound and conforms to standards.'
+              : filter === 'security'
+              ? 'No plaintext secrets or sensitive credentials detected.'
               : `No issues matching the "${filter}" filter.`}
           </p>
         </div>
@@ -200,7 +233,14 @@ const IssueCard: React.FC<{
   onSortUsers?: () => void;
   onSortProjects?: (targetAnchor?: string) => void;
 }> = ({ issue, onJumpToLine, onSortUsers, onSortProjects }) => {
-  const getSeverityBadge = (sev: IssueSeverity) => {
+  const getSeverityBadge = (sev: IssueSeverity, source: string) => {
+    if (source === 'security') {
+      return (
+        <span className="govuk-tag bg-amber-500 text-black border border-amber-600 flex items-center gap-1 text-[10px] font-bold">
+          <ShieldAlert className="w-3 h-3" /> Security Notice
+        </span>
+      );
+    }
     switch (sev) {
       case 'error':
         return (
@@ -224,6 +264,13 @@ const IssueCard: React.FC<{
   };
 
   const getSourceBadge = (source: string) => {
+    if (source === 'security') {
+      return (
+        <span className="govuk-tag bg-amber-200 text-amber-900 dark:bg-amber-950 dark:text-amber-300 text-[10px] font-mono flex items-center gap-1 font-bold">
+          <ShieldAlert className="w-3 h-3" /> secret-scanner
+        </span>
+      );
+    }
     return (
       <span className="govuk-tag govuk-tag--grey text-[10px] font-mono text-govuk-black">
         {source}
@@ -234,11 +281,17 @@ const IssueCard: React.FC<{
   return (
     <div
       onClick={() => onJumpToLine(issue.line, issue.column)}
-      className="p-3 bg-white dark:bg-zinc-900 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 border border-govuk-grey-border dark:border-zinc-800 cursor-pointer transition-all group"
+      className={`p-3 bg-white dark:bg-zinc-900 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 border ${
+        issue.source === 'security'
+          ? 'border-l-4 border-l-amber-500 border-govuk-grey-border dark:border-zinc-800'
+          : issue.severity === 'error'
+          ? 'border-l-4 border-l-govuk-red border-govuk-grey-border dark:border-zinc-800'
+          : 'border-govuk-grey-border dark:border-zinc-800'
+      } cursor-pointer transition-all group`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          {getSeverityBadge(issue.severity)}
+          {getSeverityBadge(issue.severity, issue.source)}
           {getSourceBadge(issue.source)}
         </div>
 

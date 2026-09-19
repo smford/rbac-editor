@@ -20,8 +20,59 @@ export interface ParseOptions {
   checkUnusedAnchors?: boolean;
 }
 
+export const SENSITIVE_KEY_REGEX = /(^|_)(api_key|auth_token|access_token|client_secret|password|passwd|db_password|private_key|jwt_secret)($|_)/i;
+export const AWS_ACCESS_KEY_REGEX = /\bAKIA[0-9A-Z]{16}\b/;
+export const GITHUB_TOKEN_REGEX = /\bgh[pousr]_[a-zA-Z0-9_]{36,}\b|\bghp_[a-zA-Z0-9]{36,}\b/;
+export const PEM_PRIVATE_KEY_REGEX = /-----BEGIN (?:[A-Z0-9_-]+ )?PRIVATE KEY-----/;
+
+export function isSecretPlaceholder(val: string): boolean {
+  const trimmed = val.trim();
+  if (!trimmed) return true;
+
+  // Variable interpolation: ${...}, $VAR, {{...}}, <...>, <%=...%>
+  if (/^\$\{[^}]+\}$/.test(trimmed)) return true;
+  if (/^\$[A-Za-z0-9_]+$/.test(trimmed)) return true;
+  if (/^\{\{.*\}\}$/.test(trimmed)) return true;
+  if (/^<.*>$/.test(trimmed)) return true;
+  if (/^<%=.*%>$/.test(trimmed)) return true;
+
+  // Known placeholder strings
+  const lower = trimmed.toLowerCase();
+  const placeholders = [
+    'change_me',
+    'changeme',
+    'change-me',
+    'replace_me',
+    'replaceme',
+    'replace-me',
+    'redacted',
+    '<redacted>',
+    'placeholder',
+    'dummy',
+    'example',
+    'sample',
+    'your_',
+    'todo',
+    'fixme',
+    'fake',
+    'unset',
+    'not_set',
+  ];
+
+  if (placeholders.some(p => lower.includes(p))) {
+    return true;
+  }
+
+  // Masked values like ****** or xxxxxx
+  if (/^[*xX._-]+$/.test(trimmed)) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
- * Validates and analyzes a YAML document completely in-browser.
+ * Validates and analyzes a YAML document stream completely in-browser.
  */
 export function validateYaml(text: string, options: ParseOptions = {}): ValidationResult {
   const startTime = performance.now();
@@ -46,6 +97,7 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
       danglingAliasCount: 0,
       usersCount: 0,
       parseTimeMs: performance.now() - startTime,
+      documentCount: 0,
     };
     return {
       isValid: true,
@@ -63,10 +115,10 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
 
   const issues: ValidationIssue[] = [];
   const lineCounter = new YAML.LineCounter();
-  let doc: YAML.Document.Parsed | null = null;
+  let docs: YAML.Document.Parsed[] = [];
 
   try {
-    doc = YAML.parseDocument(text, {
+    docs = YAML.parseAllDocuments(text, {
       lineCounter,
       merge: true,
       keepSourceTokens: true,
@@ -75,42 +127,43 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
     issues.push({
       id: 'parse-exception',
       severity: 'error',
-      message: err.message || 'Failed to parse YAML document',
+      message: err.message || 'Failed to parse YAML document stream',
       line: 1,
       column: 1,
       source: 'syntax',
     });
   }
 
-  // Collect parse errors from YAML parser
-  if (doc && doc.errors && doc.errors.length > 0) {
-    for (const err of doc.errors) {
-      const pos = err.linePos ? { line: err.linePos[0].line, col: err.linePos[0].col } : { line: 1, col: 1 };
-      issues.push({
-        id: `syntax-err-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
-        severity: 'error',
-        message: err.message || 'Syntax error',
-        line: pos.line,
-        column: pos.col,
-        source: 'syntax',
-        snippet: lines[pos.line - 1] || undefined,
-      });
+  // Collect parse errors and warnings across all documents
+  for (const doc of docs) {
+    if (doc && doc.errors && doc.errors.length > 0) {
+      for (const err of doc.errors) {
+        const pos = err.linePos ? { line: err.linePos[0].line, col: err.linePos[0].col } : { line: 1, col: 1 };
+        issues.push({
+          id: `syntax-err-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
+          severity: 'error',
+          message: err.message || 'Syntax error',
+          line: pos.line,
+          column: pos.col,
+          source: 'syntax',
+          snippet: lines[pos.line - 1] || undefined,
+        });
+      }
     }
-  }
 
-  // Collect parser warnings
-  if (doc && doc.warnings && doc.warnings.length > 0) {
-    for (const warn of doc.warnings) {
-      const pos = warn.linePos ? { line: warn.linePos[0].line, col: warn.linePos[0].col } : { line: 1, col: 1 };
-      issues.push({
-        id: `syntax-warn-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
-        severity: 'warning',
-        message: warn.message || 'Parser warning',
-        line: pos.line,
-        column: pos.col,
-        source: 'syntax',
-        snippet: lines[pos.line - 1] || undefined,
-      });
+    if (doc && doc.warnings && doc.warnings.length > 0) {
+      for (const warn of doc.warnings) {
+        const pos = warn.linePos ? { line: warn.linePos[0].line, col: warn.linePos[0].col } : { line: 1, col: 1 };
+        issues.push({
+          id: `syntax-warn-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
+          severity: 'warning',
+          message: warn.message || 'Parser warning',
+          line: pos.line,
+          column: pos.col,
+          source: 'syntax',
+          snippet: lines[pos.line - 1] || undefined,
+        });
+      }
     }
   }
 
@@ -118,8 +171,16 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
   const aliases: YamlAliasReference[] = [];
   const mergeKeys: MergeKeyInfo[] = [];
 
-  if (doc && doc.contents) {
-    // Traverse AST to collect Anchors, Aliases, and Merge keys
+  let danglingCount = 0;
+  let unusedCount = 0;
+
+  // Traverse each document AST for Anchors, Aliases, Merge Keys, and Plaintext Secrets
+  for (const doc of docs) {
+    if (!doc || !doc.contents) continue;
+
+    const docAnchorMap = new Map<string, YamlAnchor>();
+    const docAliases: YamlAliasReference[] = [];
+
     YAML.visit(doc, {
       Node(_key, node) {
         if (node && (node as any).anchor) {
@@ -139,8 +200,8 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
             preview = `<${nodeType}>`;
           }
 
-          if (!anchorMap.has(anchorName)) {
-            anchorMap.set(anchorName, {
+          if (!docAnchorMap.has(anchorName)) {
+            const anchorObj: YamlAnchor = {
               name: anchorName,
               line: pos.line,
               column: pos.col,
@@ -148,7 +209,9 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
               valuePreview: preview,
               references: [],
               isUsed: false,
-            });
+            };
+            docAnchorMap.set(anchorName, anchorObj);
+            anchorMap.set(anchorName, anchorObj);
           }
         }
 
@@ -158,14 +221,54 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
           const pos = range ? lineCounter.linePos(range[0]) : { line: 1, col: 1 };
           const contextLine = lines[pos.line - 1] || '';
 
-          aliases.push({
+          const aliasRef: YamlAliasReference = {
             targetAnchor: target,
             line: pos.line,
             column: pos.col,
             isMergeKey: false,
-            isDangling: false, // will update below
+            isDangling: false,
             contextSnippet: contextLine.trim(),
-          });
+          };
+          docAliases.push(aliasRef);
+          aliases.push(aliasRef);
+        }
+
+        // Secret scanner: check scalar values for high-entropy patterns (PEM, AWS, GitHub tokens)
+        if (node && YAML.isScalar(node)) {
+          const valStr = String(node.value ?? '');
+          if (valStr && !isSecretPlaceholder(valStr)) {
+            let matchedPattern: string | null = null;
+            let remediationHint = '';
+
+            if (PEM_PRIVATE_KEY_REGEX.test(valStr)) {
+              matchedPattern = 'PEM Private Key block (-----BEGIN PRIVATE KEY-----)';
+              remediationHint = 'Remove unencrypted private keys from source control and load via secure key management.';
+            } else if (AWS_ACCESS_KEY_REGEX.test(valStr)) {
+              matchedPattern = 'AWS Access Key ID format (AKIA...)';
+              remediationHint = 'Use IAM roles, AWS Secrets Manager, or environment variables instead of hardcoded access keys.';
+            } else if (GITHUB_TOKEN_REGEX.test(valStr)) {
+              matchedPattern = 'GitHub token format (ghp_...)';
+              remediationHint = 'Revoke this token immediately and supply credentials via environment secrets.';
+            }
+
+            if (matchedPattern) {
+              const range = (node as any).range;
+              const pos = range ? lineCounter.linePos(range[0]) : { line: 1, col: 1 };
+              const alreadyFlagged = issues.some(i => i.source === 'security' && i.line === pos.line);
+              if (!alreadyFlagged) {
+                issues.push({
+                  id: `security-pattern-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
+                  severity: 'warning',
+                  message: `Plaintext credential detected: matched ${matchedPattern}.`,
+                  line: pos.line,
+                  column: pos.col,
+                  source: 'security',
+                  snippet: lines[pos.line - 1] || undefined,
+                  suggestion: remediationHint,
+                });
+              }
+            }
+          }
         }
       },
 
@@ -198,50 +301,152 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
               contextSnippet: (lines[pos.line - 1] || '').trim(),
             });
           }
+
+          // Secret scanner: check sensitive key names with non-placeholder values (length >= 6)
+          const keyName = String((pair.key as any).value ?? (pair.key as any).source ?? '');
+          const normalizedKey = keyName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().replace(/[-_]/g, '_');
+
+          if (SENSITIVE_KEY_REGEX.test(normalizedKey)) {
+            if (pair.value && YAML.isScalar(pair.value)) {
+              const valStr = String(pair.value.value ?? '');
+              if (valStr.length >= 6 && !isSecretPlaceholder(valStr)) {
+                const range = (pair.value as any).range || (pair.key as any).range;
+                const pos = range ? lineCounter.linePos(range[0]) : { line: 1, col: 1 };
+                const alreadyFlagged = issues.some(i => i.source === 'security' && i.line === pos.line);
+                if (!alreadyFlagged) {
+                  issues.push({
+                    id: `security-key-${pos.line}-${pos.col}-${Math.random().toString(36).slice(2, 6)}`,
+                    severity: 'warning',
+                    message: `Unencrypted plaintext secret detected in key "${keyName}". Sensitive credentials should never be committed in plain text.`,
+                    line: pos.line,
+                    column: pos.col,
+                    source: 'security',
+                    snippet: lines[pos.line - 1] || undefined,
+                    suggestion: `Replace with environment variable interpolation (e.g. "\${${keyName.toUpperCase()}}") or reference a secret store.`,
+                  });
+                }
+              }
+            }
+          }
         }
       },
     });
-  }
 
-  // Cross-reference aliases with anchors
-  let danglingCount = 0;
-  for (const alias of aliases) {
-    const anchor = anchorMap.get(alias.targetAnchor);
-    if (anchor) {
-      anchor.references.push(alias);
-      anchor.isUsed = true;
-    } else {
-      alias.isDangling = true;
-      danglingCount++;
-      issues.push({
-        id: `dangling-alias-${alias.line}-${alias.column}-${alias.targetAnchor}`,
-        severity: 'error',
-        message: `Dangling alias "*${alias.targetAnchor}": Anchor "&${alias.targetAnchor}" is not defined in this document.`,
-        line: alias.line,
-        column: alias.column,
-        source: 'anchor',
-        snippet: lines[alias.line - 1] || undefined,
-        suggestion: `Define "&${alias.targetAnchor}" before using it, or verify the anchor name spelling.`,
-      });
+    // Cross-reference doc aliases with doc anchors
+    for (const alias of docAliases) {
+      const anchor = docAnchorMap.get(alias.targetAnchor);
+      if (anchor) {
+        anchor.references.push(alias);
+        anchor.isUsed = true;
+      } else {
+        alias.isDangling = true;
+        danglingCount++;
+        issues.push({
+          id: `dangling-alias-${alias.line}-${alias.column}-${alias.targetAnchor}`,
+          severity: 'error',
+          message: `Dangling alias "*${alias.targetAnchor}": Anchor "&${alias.targetAnchor}" is not defined in this document.`,
+          line: alias.line,
+          column: alias.column,
+          source: 'anchor',
+          snippet: lines[alias.line - 1] || undefined,
+          suggestion: `Define "&${alias.targetAnchor}" before using it, or verify the anchor name spelling.`,
+        });
+      }
+    }
+
+    // Check for unused anchors in this doc
+    if (checkUnusedAnchors) {
+      for (const [name, anchor] of docAnchorMap) {
+        if (!anchor.isUsed) {
+          unusedCount++;
+          issues.push({
+            id: `unused-anchor-${anchor.line}-${anchor.column}-${name}`,
+            severity: 'warning',
+            message: `Unused anchor "&${name}": Defined at line ${anchor.line} but never referenced by any alias.`,
+            line: anchor.line,
+            column: anchor.column,
+            source: 'anchor',
+            snippet: lines[anchor.line - 1] || undefined,
+            suggestion: `Remove this anchor if it is obsolete, or use "*${name}" to reference it.`,
+          });
+        }
+      }
     }
   }
 
-  // Check for unused anchors
-  let unusedCount = 0;
-  if (checkUnusedAnchors) {
-    for (const [name, anchor] of anchorMap) {
-      if (!anchor.isUsed) {
-        unusedCount++;
-        issues.push({
-          id: `unused-anchor-${anchor.line}-${anchor.column}-${name}`,
-          severity: 'warning',
-          message: `Unused anchor "&${name}": Defined at line ${anchor.line} but never referenced by any alias.`,
-          line: anchor.line,
-          column: anchor.column,
-          source: 'anchor',
-          snippet: lines[anchor.line - 1] || undefined,
-          suggestion: `Remove this anchor if it is obsolete, or use "*${name}" to reference it.`,
-        });
+  // Line-level fallback secret scanner to catch secrets even if AST traversal missed or YAML had syntax errors
+  for (let i = 0; i < lines.length; i++) {
+    const lineNum = i + 1;
+    const lineText = lines[i];
+    if (!lineText.trim() || lineText.trim().startsWith('#')) continue;
+
+    if (issues.some(issue => issue.source === 'security' && issue.line === lineNum)) {
+      continue;
+    }
+
+    if (PEM_PRIVATE_KEY_REGEX.test(lineText)) {
+      issues.push({
+        id: `security-pem-${lineNum}-1`,
+        severity: 'warning',
+        message: 'Plaintext credential detected: matched PEM Private Key block (-----BEGIN PRIVATE KEY-----).',
+        line: lineNum,
+        column: lineText.indexOf('-----BEGIN') + 1,
+        source: 'security',
+        snippet: lineText,
+        suggestion: 'Remove unencrypted private keys from source control and load via secure key management.',
+      });
+      continue;
+    }
+
+    const awsMatch = lineText.match(AWS_ACCESS_KEY_REGEX);
+    if (awsMatch && !isSecretPlaceholder(awsMatch[0])) {
+      issues.push({
+        id: `security-aws-${lineNum}-${(awsMatch.index ?? 0) + 1}`,
+        severity: 'warning',
+        message: 'Plaintext credential detected: matched AWS Access Key ID format (AKIA...).',
+        line: lineNum,
+        column: (awsMatch.index ?? 0) + 1,
+        source: 'security',
+        snippet: lineText,
+        suggestion: 'Use IAM roles, AWS Secrets Manager, or environment variables instead of hardcoding AWS access keys.',
+      });
+      continue;
+    }
+
+    const ghMatch = lineText.match(GITHUB_TOKEN_REGEX);
+    if (ghMatch && !isSecretPlaceholder(ghMatch[0])) {
+      issues.push({
+        id: `security-ghp-${lineNum}-${(ghMatch.index ?? 0) + 1}`,
+        severity: 'warning',
+        message: 'Plaintext credential detected: matched GitHub token format (ghp_...).',
+        line: lineNum,
+        column: (ghMatch.index ?? 0) + 1,
+        source: 'security',
+        snippet: lineText,
+        suggestion: 'Revoke this token immediately and supply credentials via environment secrets.',
+      });
+      continue;
+    }
+
+    const kvMatch = lineText.match(/^\s*([a-zA-Z0-9_\-]+)\s*:\s*(['"]?)(.+?)\2\s*$/);
+    if (kvMatch) {
+      const rawKey = kvMatch[1];
+      const rawVal = kvMatch[3];
+      const normKey = rawKey.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase().replace(/[-_]/g, '_');
+      if (SENSITIVE_KEY_REGEX.test(normKey)) {
+        if (rawVal.length >= 6 && !isSecretPlaceholder(rawVal)) {
+          const col = lineText.indexOf(rawVal) + 1;
+          issues.push({
+            id: `security-key-${lineNum}-${col}`,
+            severity: 'warning',
+            message: `Unencrypted plaintext secret detected in key "${rawKey}". Sensitive credentials should never be committed in plain text.`,
+            line: lineNum,
+            column: Math.max(1, col),
+            source: 'security',
+            snippet: lineText,
+            suggestion: `Replace with environment variable interpolation (e.g. "\${${rawKey.toUpperCase()}}") or reference a secret store.`,
+          });
+        }
       }
     }
   }
@@ -251,21 +456,42 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
   let resolvedYaml = '';
   let jsonString = '';
 
-  if (issues.filter(i => i.severity === 'error').length === 0 && doc) {
+  if (issues.filter(i => i.severity === 'error').length === 0 && docs.length > 0) {
     try {
-      parsedData = doc.toJS({ maxAliasCount });
-      try {
-        jsonString = JSON.stringify(parsedData, null, 2);
-      } catch (err: any) {
-        jsonString = `// Could not serialize to JSON: ${err.message}`;
-      }
+      const parsedDocs = docs.map(doc => doc.toJS({ maxAliasCount }));
 
-      try {
-        // Deep clone to strip internal object identity sharing so stringify expands all aliases
-        const deepCloned = JSON.parse(jsonString);
-        resolvedYaml = YAML.stringify(deepCloned, { indent: 2 });
-      } catch {
-        resolvedYaml = YAML.stringify(parsedData, { indent: 2 });
+      if (docs.length === 1) {
+        parsedData = parsedDocs[0];
+        try {
+          jsonString = JSON.stringify(parsedData, null, 2);
+        } catch (err: any) {
+          jsonString = `// Could not serialize to JSON: ${err.message}`;
+        }
+
+        try {
+          const deepCloned = JSON.parse(jsonString);
+          resolvedYaml = YAML.stringify(deepCloned, { indent: 2 });
+        } catch {
+          resolvedYaml = YAML.stringify(parsedData, { indent: 2 });
+        }
+      } else {
+        parsedData = parsedDocs;
+        try {
+          jsonString = JSON.stringify(parsedData, null, 2);
+        } catch (err: any) {
+          jsonString = `// Could not serialize to JSON: ${err.message}`;
+        }
+
+        const resolvedDocStrings: string[] = [];
+        for (const pDoc of parsedDocs) {
+          try {
+            const deepCloned = JSON.parse(JSON.stringify(pDoc));
+            resolvedDocStrings.push(YAML.stringify(deepCloned, { indent: 2 }).trim());
+          } catch {
+            resolvedDocStrings.push(YAML.stringify(pDoc, { indent: 2 }).trim());
+          }
+        }
+        resolvedYaml = resolvedDocStrings.join('\n---\n') + '\n';
       }
     } catch (err: any) {
       issues.push({
@@ -283,19 +509,21 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
   let isUsersConfig = false;
   let usersMetadata: UsersMetadata | undefined = undefined;
 
-  if (parsedData && typeof parsedData === 'object') {
-    const hasUsers = Array.isArray(parsedData.users);
-    const hasXRoles = Boolean(parsedData['x-roles']);
-    const hasXEnvs = Boolean(parsedData['x-environments']);
-    const hasXProjects = Boolean(parsedData['x-projects']);
+  const candidateDocs = Array.isArray(parsedData) ? parsedData : [parsedData];
+  for (const pData of candidateDocs) {
+    if (pData && typeof pData === 'object') {
+      const hasUsers = Array.isArray(pData.users);
+      const hasXRoles = Boolean(pData['x-roles']);
+      const hasXEnvs = Boolean(pData['x-environments']);
+      const hasXProjects = Boolean(pData['x-projects']);
 
-    if (hasUsers || hasXRoles || hasXEnvs || hasXProjects) {
-      isUsersConfig = true;
-      usersMetadata = extractUsersMetadata(parsedData, lines, anchorMap);
-      usersMetadata.hasPresetProjectAnchors = hasPresetProjectAnchors(text);
-
-      // Perform RBAC validation
-      validateUsersRbac(usersMetadata, issues, text);
+      if (hasUsers || hasXRoles || hasXEnvs || hasXProjects) {
+        isUsersConfig = true;
+        usersMetadata = extractUsersMetadata(pData, lines, anchorMap);
+        usersMetadata.hasPresetProjectAnchors = hasPresetProjectAnchors(text);
+        validateUsersRbac(usersMetadata, issues, text);
+        break;
+      }
     }
   }
 
@@ -313,6 +541,7 @@ export function validateYaml(text: string, options: ParseOptions = {}): Validati
     danglingAliasCount: danglingCount,
     usersCount: usersMetadata?.users.length ?? 0,
     parseTimeMs: Math.round((performance.now() - startTime) * 100) / 100,
+    documentCount: docs.length,
   };
 
   return {

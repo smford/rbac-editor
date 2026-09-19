@@ -1,5 +1,5 @@
 export type IssueSeverity = 'error' | 'warning' | 'info';
-export type IssueSource = 'syntax' | 'anchor' | 'schema' | 'rbac';
+export type IssueSource = 'syntax' | 'anchor' | 'schema' | 'rbac' | 'security';
 
 export interface ValidationIssue {
   id: string;
@@ -112,6 +112,7 @@ export interface ValidationStats {
   danglingAliasCount: number;
   usersCount: number;
   parseTimeMs: number;
+  documentCount: number;
 }
 
 export interface ValidationResult {

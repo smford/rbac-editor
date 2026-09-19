@@ -14,6 +14,8 @@ import {
   ArrowDownAZ,
   UserPlus,
   FolderPlus,
+  RotateCcw,
+  Files,
 } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
@@ -23,6 +25,7 @@ interface HeaderProps {
   onFormatYaml: () => void;
   onCopyYaml: () => void;
   onDownloadYaml: () => void;
+  onResetDefault?: () => void;
   onSortUsers: () => void;
   onSortProjects?: (targetAnchor?: string) => void;
   onOpenAddUser?: () => void;
@@ -37,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   onFormatYaml,
   onCopyYaml,
   onDownloadYaml,
+  onResetDefault,
   onSortUsers,
   onSortProjects,
   onOpenAddUser,
@@ -145,6 +149,13 @@ export const Header: React.FC<HeaderProps> = ({
             {validationResult.stats.anchorCount} &amp; / {validationResult.stats.aliasCount} *
           </span>
 
+          {validationResult.stats.documentCount > 1 && (
+            <span className="govuk-tag govuk-tag--blue flex items-center gap-1 text-[11px] font-mono">
+              <Files className="w-3 h-3" />
+              {validationResult.stats.documentCount} Docs
+            </span>
+          )}
+
           {validationResult.isUsersConfig && (
             <span className="govuk-tag govuk-tag--purple flex items-center gap-1 text-[11px]">
               <Sparkles className="w-3 h-3" />
@@ -155,6 +166,19 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right: Actions (Toolbar Buttons) */}
         <div className="flex items-center gap-2">
+          {/* Reset to Default */}
+          {onResetDefault && (
+            <button
+              type="button"
+              onClick={onResetDefault}
+              title="Reset editor to default template and clear saved session"
+              className="govuk-button--secondary text-xs px-2.5 py-1.5 flex items-center gap-1.5 cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
+
           {/* Upload file */}
           <input
             type="file"

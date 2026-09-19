@@ -1,7 +1,9 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useState, useMemo, useEffect } from 'react';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { yaml } from '@codemirror/lang-yaml';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { linter, Diagnostic, lintGutter, forceLinting } from '@codemirror/lint';
+import { EditorView } from '@codemirror/view';
 import { Trash2, Clipboard, WrapText, ArrowDownToLine } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
@@ -26,6 +28,77 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
   const [wrapLines, setWrapLines] = useState(false);
   const [jumpFeedback, setJumpFeedback] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Native CodeMirror linter mapping validationResult issues to diagnostics
+  const yamlLinter = useMemo(() => {
+    return linter(
+      (view) => {
+        const doc = view.state.doc;
+        const diagnostics: Diagnostic[] = [];
+
+        for (const issue of validationResult.issues) {
+          const lineNum = Math.max(1, Math.min(issue.line, doc.lines));
+          const lineInfo = doc.line(lineNum);
+
+          let from = lineInfo.from + Math.max(0, issue.column - 1);
+          from = Math.min(from, lineInfo.to);
+
+          // Find exact range: try token at position or up to end of line
+          let to = from;
+          if (from < lineInfo.to) {
+            const slice = doc.sliceString(from, lineInfo.to);
+            const tokenMatch = slice.match(/^[a-zA-Z0-9_.\-:*&<<]+/);
+            if (tokenMatch && tokenMatch[0].length > 0) {
+              to = from + tokenMatch[0].length;
+            } else {
+              to = Math.min(from + 1, lineInfo.to);
+            }
+          } else {
+            if (lineInfo.length > 0) {
+              from = Math.max(lineInfo.from, lineInfo.to - 1);
+              to = lineInfo.to;
+            } else {
+              to = from;
+            }
+          }
+
+          // Severity: red for errors, amber for warnings/security
+          let severity: 'error' | 'warning' | 'info' = 'error';
+          if (issue.severity === 'warning' || issue.source === 'security') {
+            severity = 'warning';
+          } else if (issue.severity === 'info') {
+            severity = 'info';
+          }
+
+          // Construct tooltip message with failure cause and actionable remediation suggestion
+          let message = issue.message;
+          if (issue.suggestion) {
+            message += `\n\n💡 Remediation:\n${issue.suggestion}`;
+          }
+
+          diagnostics.push({
+            from,
+            to,
+            severity,
+            source: issue.source === 'security' ? 'SECURITY' : issue.source ? issue.source.toUpperCase() : 'YAML',
+            message,
+            markClass: issue.source === 'security' ? 'cm-lint-security' : undefined,
+          });
+        }
+
+        return diagnostics;
+      },
+      { delay: 50 }
+    );
+  }, [validationResult]);
+
+  // Force re-lint whenever validationResult changes
+  useEffect(() => {
+    const view = cmRef.current?.view;
+    if (view) {
+      forceLinting(view);
+    }
+  }, [validationResult]);
 
   // Expose jumpToLine method to parent component
   useImperativeHandle(ref, () => ({
@@ -118,7 +191,8 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
             YAML editor
           </h2>
           <span className="text-xs text-[#505a5f] dark:text-zinc-400 whitespace-nowrap">
-            ({validationResult.stats.lines} lines · {formatSize(validationResult.stats.bytes)})
+            ({validationResult.stats.lines} lines · {formatSize(validationResult.stats.bytes)}
+            {validationResult.stats.documentCount > 1 ? ` · ${validationResult.stats.documentCount} docs` : ''})
           </span>
 
           {jumpFeedback && (
@@ -184,7 +258,15 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
           value={value}
           height="100%"
           theme={darkMode ? oneDark : 'light'}
-          extensions={[yaml()]}
+          extensions={useMemo(
+            () => [
+              yaml(),
+              lintGutter(),
+              yamlLinter,
+              ...(wrapLines ? [EditorView.lineWrapping] : []),
+            ],
+            [yamlLinter, wrapLines]
+          )}
           onChange={onChange}
           basicSetup={{
             lineNumbers: true,

@@ -58,6 +58,7 @@ export const Footer: React.FC<FooterProps> = ({
       <div className="flex items-center gap-2.5 flex-wrap ml-auto">
         <span className="hidden md:inline font-mono text-[11px] text-govuk-text-secondary dark:text-zinc-400">
           {stats.lines} lines · {formatSize(stats.bytes)}
+          {stats.documentCount > 1 ? ` · ${stats.documentCount} docs` : ''}
           {isUsersConfig ? ` · ${stats.usersCount} users` : ` · ${stats.anchorCount} anchors`}
         </span>
 

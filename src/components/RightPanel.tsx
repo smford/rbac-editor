@@ -258,7 +258,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           />
         )}
         {activeTab === 'resolved' && (
-          <ResolvedTab validationResult={validationResult} />
+          <ResolvedTab validationResult={validationResult} currentYaml={currentYaml} />
         )}
       </div>
     </div>

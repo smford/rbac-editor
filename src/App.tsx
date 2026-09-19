@@ -8,9 +8,19 @@ import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { validateYaml, sortUsersInYaml, sortProjectsInPresetYaml } from './utils/yamlValidator';
 import { USERS_YAML_DEFAULT } from './data/defaultUsersYaml';
 
+const STORAGE_KEY = 'yaml_clean_session_v1';
+
 export const App: React.FC = () => {
-  // Pre-load with users.yaml as requested
+  // Restore saved session from localStorage if present; fallback to default template
   const [yamlContent, setYamlContent] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null && saved.trim().length > 0) {
+        return saved;
+      }
+    } catch (e) {
+      console.warn('Failed to restore session from localStorage:', e);
+    }
     return USERS_YAML_DEFAULT || '';
   });
 
@@ -24,6 +34,19 @@ export const App: React.FC = () => {
 
   const leftPanelRef = useRef<LeftPanelHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-save session with 400ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, yamlContent);
+      } catch (e) {
+        console.warn('Failed to auto-save session to localStorage:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [yamlContent]);
 
   // Sync dark mode class with <html> element
   useEffect(() => {
@@ -49,18 +72,41 @@ export const App: React.FC = () => {
     setYamlContent(content);
   }, []);
 
-  // Format / Prettify YAML
+  // Reset to default template and clear cached session
+  const handleResetDefault = useCallback(() => {
+    if (window.confirm('Reset YAML editor to the default template and clear saved session?')) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn('Failed to clear session from localStorage:', e);
+      }
+      setYamlContent(USERS_YAML_DEFAULT || '');
+    }
+  }, []);
+
+  // Format / Prettify YAML across multi-document streams separated by \n---\n
   const handleFormatYaml = useCallback(() => {
     try {
-      const doc = YAML.parseDocument(yamlContent, {
+      const docs = YAML.parseAllDocuments(yamlContent, {
         keepSourceTokens: true,
         merge: true,
       });
 
-      if (doc.errors.length === 0) {
-        setYamlContent(doc.toString());
+      const allErrors = docs.flatMap(d => d.errors);
+      if (allErrors.length === 0) {
+        if (docs.length === 0) {
+          setYamlContent('');
+        } else if (docs.length === 1) {
+          setYamlContent(docs[0].toString());
+        } else {
+          // Format each document in the stream separated by \n---\n
+          const formatted = docs
+            .map(d => d.toString().trim().replace(/^---\n?/, ''))
+            .join('\n---\n');
+          setYamlContent(formatted ? formatted + '\n' : '');
+        }
       } else {
-        alert(`Cannot auto-format YAML with syntax errors:\n${doc.errors[0].message}`);
+        alert(`Cannot auto-format YAML with syntax errors:\n${allErrors[0].message}`);
       }
     } catch (err: any) {
       alert(`Format failed: ${err.message}`);
@@ -243,6 +289,7 @@ export const App: React.FC = () => {
         onFormatYaml={handleFormatYaml}
         onCopyYaml={handleCopyYaml}
         onDownloadYaml={handleDownloadYaml}
+        onResetDefault={handleResetDefault}
         onSortUsers={handleSortUsers}
         onSortProjects={handleSortProjects}
         onOpenAddUser={handleOpenAddUser}

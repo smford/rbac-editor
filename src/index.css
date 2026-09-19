@@ -256,3 +256,50 @@
 .cm-focused {
   outline: none !important;
 }
+
+/* CodeMirror Inline Linter & Gutter Diagnostics */
+.cm-lintRange-error {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='m0 3 l3 -3 l3 3' stroke='%23d4351c' fill='none' stroke-width='1.2'/%3E%3C/svg%3E") !important;
+  background-position: bottom left !important;
+  background-repeat: repeat-x !important;
+  padding-bottom: 2px !important;
+}
+
+.cm-lintRange-warning,
+.cm-lintRange.cm-lint-security {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='m0 3 l3 -3 l3 3' stroke='%23d97706' fill='none' stroke-width='1.2'/%3E%3C/svg%3E") !important;
+  background-position: bottom left !important;
+  background-repeat: repeat-x !important;
+  padding-bottom: 2px !important;
+}
+
+.cm-lint-marker {
+  width: 14px !important;
+  height: 14px !important;
+  cursor: pointer !important;
+}
+
+.cm-lint-marker-error {
+  content: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d4351c'><circle cx='8' cy='8' r='7'/><path d='M8 4v5M8 11.5v.5' stroke='%23fff' stroke-width='1.5' stroke-linecap='round'/></svg>") !important;
+}
+
+.cm-lint-marker-warning {
+  content: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23d97706'><path d='M8 1.5l7 12.5H1L8 1.5z'/><path d='M8 6v4M8 12v.5' stroke='%23fff' stroke-width='1.4' stroke-linecap='round'/></svg>") !important;
+}
+
+.cm-tooltip-lint {
+  border: 1px solid #71717a !important;
+  border-radius: 4px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  max-width: 520px !important;
+  white-space: pre-wrap !important;
+  padding: 8px 12px !important;
+}
+.dark .cm-tooltip-lint {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+}
