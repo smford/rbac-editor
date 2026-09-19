@@ -5,6 +5,26 @@
 
 ---
 
+## Visual Overview
+
+### 1. Multi-Document YAML Streams, Inline Linter & Shift-Left Secret Scanner
+![Multi-Document Stream, Inline Linter & Secret Scanner](docs/screenshots/01-multi-doc-stream-security.png)
+*Real-time multi-document stream parsing (`---`), inline CodeMirror lint squiggles and gutter markers, stream counters, and heuristic plaintext credential detection with actionable remediation.*
+
+### 2. Deep YAML Anchor & Alias Architecture
+![YAML Anchor & Alias Architecture](docs/screenshots/02-anchor-catalog-dependencies.png)
+*Comprehensive catalog of defined anchors (`&name`), node type inspection, reverse alias cross-references (`*name`), reference counts, and single-click jump navigation directly into the editor source.*
+
+### 3. Side-by-Side Visual Diff (Raw vs. Evaluated)
+![Side-by-Side Visual Diff View](docs/screenshots/03-visual-diff-comparison.png)
+*Real-time visual comparison of source YAML (containing active `&` anchors and `<<` merge keys) alongside the fully dereferenced, pure evaluated output.*
+
+### 4. Dark Mode & RBAC Directory Management
+![Dark Mode & RBAC Directory](docs/screenshots/04-dark-mode-rbac-directory.png)
+*Accessible high-contrast GDS Dark Mode theme with real-time RBAC User Directory, Super Admin and Power Admin classification metrics, and project hierarchy breakdown.*
+
+---
+
 ## Key Features
 
 ### 1. 100% Client-Side In-Browser Privacy & Air-Gapped Readiness
