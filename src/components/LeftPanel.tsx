@@ -1,8 +1,10 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react';
+import React, { useRef, useImperativeHandle, forwardRef, useState, useMemo, useEffect } from 'react';
 import CodeMirror, { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { yaml } from '@codemirror/lang-yaml';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { Trash2, Clipboard, WrapText, ArrowDownToLine, ArrowDownAZ } from 'lucide-react';
+import { linter, Diagnostic, lintGutter, forceLinting } from '@codemirror/lint';
+import { EditorView } from '@codemirror/view';
+import { Trash2, Clipboard, WrapText, ArrowDownToLine } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
 export interface LeftPanelHandle {
@@ -14,7 +16,6 @@ interface LeftPanelProps {
   onChange: (val: string) => void;
   validationResult: ValidationResult;
   darkMode: boolean;
-  onSortUsers?: () => void;
 }
 
 export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
@@ -22,12 +23,82 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
   onChange,
   validationResult,
   darkMode,
-  onSortUsers,
 }, ref) => {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const [wrapLines, setWrapLines] = useState(false);
   const [jumpFeedback, setJumpFeedback] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Native CodeMirror linter mapping validationResult issues to diagnostics
+  const yamlLinter = useMemo(() => {
+    return linter(
+      (view) => {
+        const doc = view.state.doc;
+        const diagnostics: Diagnostic[] = [];
+
+        for (const issue of validationResult.issues) {
+          const lineNum = Math.max(1, Math.min(issue.line, doc.lines));
+          const lineInfo = doc.line(lineNum);
+
+          let from = lineInfo.from + Math.max(0, issue.column - 1);
+          from = Math.min(from, lineInfo.to);
+
+          // Find exact range: try token at position or up to end of line
+          let to = from;
+          if (from < lineInfo.to) {
+            const slice = doc.sliceString(from, lineInfo.to);
+            const tokenMatch = slice.match(/^[a-zA-Z0-9_.\-:*&<<]+/);
+            if (tokenMatch && tokenMatch[0].length > 0) {
+              to = from + tokenMatch[0].length;
+            } else {
+              to = Math.min(from + 1, lineInfo.to);
+            }
+          } else {
+            if (lineInfo.length > 0) {
+              from = Math.max(lineInfo.from, lineInfo.to - 1);
+              to = lineInfo.to;
+            } else {
+              to = from;
+            }
+          }
+
+          // Severity: red for errors, amber for warnings/security
+          let severity: 'error' | 'warning' | 'info' = 'error';
+          if (issue.severity === 'warning' || issue.source === 'security') {
+            severity = 'warning';
+          } else if (issue.severity === 'info') {
+            severity = 'info';
+          }
+
+          // Construct tooltip message with failure cause and actionable remediation suggestion
+          let message = issue.message;
+          if (issue.suggestion) {
+            message += `\n\n💡 Remediation:\n${issue.suggestion}`;
+          }
+
+          diagnostics.push({
+            from,
+            to,
+            severity,
+            source: issue.source === 'security' ? 'SECURITY' : issue.source ? issue.source.toUpperCase() : 'YAML',
+            message,
+            markClass: issue.source === 'security' ? 'cm-lint-security' : undefined,
+          });
+        }
+
+        return diagnostics;
+      },
+      { delay: 50 }
+    );
+  }, [validationResult]);
+
+  // Force re-lint whenever validationResult changes
+  useEffect(() => {
+    const view = cmRef.current?.view;
+    if (view) {
+      forceLinting(view);
+    }
+  }, [validationResult]);
 
   // Expose jumpToLine method to parent component
   useImperativeHandle(ref, () => ({
@@ -109,79 +180,74 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`h-full flex flex-col relative transition-colors ${
-        isDragOver ? 'ring-2 ring-indigo-500 bg-indigo-950/20' : ''
+        isDragOver ? 'ring-4 ring-govuk-blue bg-govuk-blue-tint/20' : ''
       }`}
     >
       {/* Editor Sub-Header */}
-      <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/90 dark:bg-zinc-900/60 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 shrink-0 select-none">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider text-[10px]">
-            YAML Source Editor
+      <div className="h-11 px-3 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between text-xs text-govuk-black dark:text-zinc-300 shrink-0 select-none gap-2 overflow-x-auto overflow-y-hidden">
+        {/* Left: Heading and Metadata */}
+        <div className="flex items-center gap-2 shrink-0">
+          <h2 className="text-xs font-bold text-govuk-black dark:text-zinc-100 whitespace-nowrap">
+            YAML editor
+          </h2>
+          <span className="text-xs text-[#505a5f] dark:text-zinc-400 whitespace-nowrap">
+            ({validationResult.stats.lines} lines · {formatSize(validationResult.stats.bytes)}
+            {validationResult.stats.documentCount > 1 ? ` · ${validationResult.stats.documentCount} docs` : ''})
           </span>
-          <span className="text-zinc-400 dark:text-zinc-600">|</span>
-          <span>{validationResult.stats.lines} lines</span>
-          <span className="text-zinc-400 dark:text-zinc-600">•</span>
-          <span>{formatSize(validationResult.stats.bytes)}</span>
 
           {jumpFeedback && (
-            <span className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-medium animate-fade-in bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+            <strong className="govuk-tag govuk-tag--green inline-flex items-center gap-1 text-[11px] py-0.5 px-2 whitespace-nowrap">
               <ArrowDownToLine className="w-3 h-3" />
-              {jumpFeedback}
-            </span>
+              <span>{jumpFeedback}</span>
+            </strong>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {validationResult.isUsersConfig && onSortUsers && (
-            <button
-              onClick={() => {
-                onSortUsers();
-                setJumpFeedback('Sorted users A-Z');
-                setTimeout(() => setJumpFeedback(null), 2500);
-              }}
-              title="Sort all users alphabetically (A-Z)"
-              className="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-2 py-1 rounded transition-colors"
-            >
-              <ArrowDownAZ className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-[11px] font-medium">Sort Users</span>
-            </button>
-          )}
-
+        {/* Right: Editor Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={() => setWrapLines(!wrapLines)}
-            title={wrapLines ? 'Disable line wrap' : 'Enable line wrap'}
-            className={`p-1 rounded transition-colors ${
-              wrapLines ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+            aria-pressed={wrapLines}
+            title={wrapLines ? 'Turn line wrap off' : 'Turn line wrap on'}
+            className={`h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 transition-colors whitespace-nowrap govuk-button--secondary ${
+              wrapLines
+                ? 'ring-2 ring-govuk-black dark:ring-white bg-[#e5e5e4] dark:bg-zinc-800'
+                : ''
             }`}
           >
-            <WrapText className="w-3.5 h-3.5" />
+            <WrapText className="w-3.5 h-3.5 shrink-0" />
+            <span>Wrap lines</span>
           </button>
 
           <button
+            type="button"
             onClick={handlePaste}
-            title="Paste from clipboard"
-            className="flex items-center gap-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 px-1.5 py-1 rounded transition-colors"
+            title="Paste YAML from clipboard"
+            className="h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 whitespace-nowrap govuk-button--secondary"
           >
-            <Clipboard className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Paste</span>
+            <Clipboard className="w-3.5 h-3.5 shrink-0" />
+            <span>Paste</span>
           </button>
 
           <button
+            type="button"
             onClick={handleClear}
-            title="Clear editor"
-            className="flex items-center gap-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 px-1.5 py-1 rounded transition-colors"
+            disabled={!value}
+            title={value ? 'Clear editor content' : 'Editor is already empty'}
+            className="h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap govuk-button--warning"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Clear</span>
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />
+            <span>Clear</span>
           </button>
         </div>
       </div>
 
       {/* Drag & drop overlay indicator */}
       {isDragOver && (
-        <div className="absolute inset-0 z-30 bg-indigo-950/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none border-2 border-dashed border-indigo-400">
-          <p className="text-base font-medium text-white">Drop YAML file to inspect</p>
-          <p className="text-xs text-indigo-200 mt-1">Validation and anchor analysis run in-browser instantly</p>
+        <div className="absolute inset-0 z-30 bg-govuk-blue/90 flex flex-col items-center justify-center pointer-events-none border-4 border-dashed border-white">
+          <p className="text-lg font-bold text-white">Drop YAML file here to inspect</p>
+          <p className="text-xs text-govuk-blue-tint mt-1">100% Client-Side validation and anchor analysis</p>
         </div>
       )}
 
@@ -192,7 +258,15 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
           value={value}
           height="100%"
           theme={darkMode ? oneDark : 'light'}
-          extensions={[yaml()]}
+          extensions={useMemo(
+            () => [
+              yaml(),
+              lintGutter(),
+              yamlLinter,
+              ...(wrapLines ? [EditorView.lineWrapping] : []),
+            ],
+            [yamlLinter, wrapLines]
+          )}
           onChange={onChange}
           basicSetup={{
             lineNumbers: true,

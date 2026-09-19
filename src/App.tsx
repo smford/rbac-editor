@@ -2,23 +2,51 @@ import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import YAML from 'yaml';
 import { Header } from './components/Header';
 import { LeftPanel, LeftPanelHandle } from './components/LeftPanel';
-import { RightPanel } from './components/RightPanel';
-import { validateYaml, sortUsersInYaml } from './utils/yamlValidator';
+import { RightPanel, RightPanelTab } from './components/RightPanel';
+import { Footer } from './components/Footer';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { validateYaml, sortUsersInYaml, sortProjectsInPresetYaml } from './utils/yamlValidator';
 import { USERS_YAML_DEFAULT } from './data/defaultUsersYaml';
 
+const STORAGE_KEY = 'yaml_clean_session_v1';
+
 export const App: React.FC = () => {
-  // Pre-load with users.yaml as requested
+  // Restore saved session from localStorage if present; fallback to default template
   const [yamlContent, setYamlContent] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved !== null && saved.trim().length > 0) {
+        return saved;
+      }
+    } catch (e) {
+      console.warn('Failed to restore session from localStorage:', e);
+    }
     return USERS_YAML_DEFAULT || '';
   });
 
-  // Default to dark mode
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('diagnostics');
+  const [showShortcuts, setShowShortcuts] = useState<boolean>(false);
+
+  // Default to GDS light mode
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [leftWidthPercent, setLeftWidthPercent] = useState<number>(50);
   const [isResizing, setIsResizing] = useState<boolean>(false);
 
   const leftPanelRef = useRef<LeftPanelHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-save session with 400ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, yamlContent);
+      } catch (e) {
+        console.warn('Failed to auto-save session to localStorage:', e);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [yamlContent]);
 
   // Sync dark mode class with <html> element
   useEffect(() => {
@@ -44,18 +72,41 @@ export const App: React.FC = () => {
     setYamlContent(content);
   }, []);
 
-  // Format / Prettify YAML
+  // Reset to default template and clear cached session
+  const handleResetDefault = useCallback(() => {
+    if (window.confirm('Reset YAML editor to the default template and clear saved session?')) {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn('Failed to clear session from localStorage:', e);
+      }
+      setYamlContent(USERS_YAML_DEFAULT || '');
+    }
+  }, []);
+
+  // Format / Prettify YAML across multi-document streams separated by \n---\n
   const handleFormatYaml = useCallback(() => {
     try {
-      const doc = YAML.parseDocument(yamlContent, {
+      const docs = YAML.parseAllDocuments(yamlContent, {
         keepSourceTokens: true,
         merge: true,
       });
 
-      if (doc.errors.length === 0) {
-        setYamlContent(doc.toString());
+      const allErrors = docs.flatMap(d => d.errors);
+      if (allErrors.length === 0) {
+        if (docs.length === 0) {
+          setYamlContent('');
+        } else if (docs.length === 1) {
+          setYamlContent(docs[0].toString());
+        } else {
+          // Format each document in the stream separated by \n---\n
+          const formatted = docs
+            .map(d => d.toString().trim().replace(/^---\n?/, ''))
+            .join('\n---\n');
+          setYamlContent(formatted ? formatted + '\n' : '');
+        }
       } else {
-        alert(`Cannot auto-format YAML with syntax errors:\n${doc.errors[0].message}`);
+        alert(`Cannot auto-format YAML with syntax errors:\n${allErrors[0].message}`);
       }
     } catch (err: any) {
       alert(`Format failed: ${err.message}`);
@@ -88,6 +139,25 @@ export const App: React.FC = () => {
     }
   }, [yamlContent]);
 
+  // Sort projects in preset anchors (all_projects_admin & all_projects_non_prod_admin) alphabetically
+  const handleSortProjects = useCallback((targetAnchor?: string) => {
+    const res = sortProjectsInPresetYaml(
+      yamlContent,
+      targetAnchor ? [targetAnchor] : undefined
+    );
+    if (res.changed) {
+      setYamlContent(res.updatedYaml);
+    }
+  }, [yamlContent]);
+
+  const handleOpenAddUser = useCallback(() => {
+    setRightPanelTab('adduser');
+  }, []);
+
+  const handleOpenAddProject = useCallback(() => {
+    setRightPanelTab('addproject');
+  }, []);
+
   // Resizable split divider drag handlers
   const handleMouseDown = () => {
     setIsResizing(true);
@@ -117,8 +187,101 @@ export const App: React.FC = () => {
     };
   }, [isResizing]);
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        Boolean(target.closest('.cm-editor'))
+      );
+
+      // Escape key closes shortcuts modal or wizards
+      if (e.key === 'Escape') {
+        if (showShortcuts) {
+          e.preventDefault();
+          setShowShortcuts(false);
+          return;
+        }
+        if (rightPanelTab === 'adduser' || rightPanelTab === 'addproject') {
+          e.preventDefault();
+          setRightPanelTab('directory');
+          return;
+        }
+      }
+
+      // '?' opens shortcuts modal when not typing in an input/editor
+      if (e.key === '?' && !isInput) {
+        e.preventDefault();
+        setShowShortcuts(prev => !prev);
+        return;
+      }
+
+      // Ctrl/Cmd + S to Export / Download
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleDownloadYaml();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + F to Format
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        handleFormatYaml();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + U to Sort Users
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        handleSortUsers();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + P to Sort Projects
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        handleSortProjects();
+        return;
+      }
+
+      // Alt + 1..4, U, P for view navigation
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === '1') {
+          e.preventDefault();
+          setRightPanelTab('diagnostics');
+        } else if (e.key === '2') {
+          e.preventDefault();
+          setRightPanelTab('anchors');
+        } else if (e.key === '3') {
+          e.preventDefault();
+          setRightPanelTab('directory');
+        } else if (e.key === '4') {
+          e.preventDefault();
+          setRightPanelTab('resolved');
+        } else if (e.key.toLowerCase() === 'u') {
+          e.preventDefault();
+          setRightPanelTab('adduser');
+        } else if (e.key.toLowerCase() === 'p') {
+          e.preventDefault();
+          setRightPanelTab('addproject');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showShortcuts, rightPanelTab, handleDownloadYaml, handleFormatYaml, handleSortUsers, handleSortProjects]);
+
   return (
-    <div className={`h-screen w-screen flex flex-col ${darkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
+    <div className={`h-screen w-screen flex flex-col ${darkMode ? 'dark bg-zinc-950 text-zinc-100' : 'bg-govuk-grey text-govuk-black'}`}>
+      {/* GDS Skip to Main Content Link */}
+      <a href="#main-content" className="govuk-skip-link">
+        Skip to main content
+      </a>
+
       {/* Top Header */}
       <Header
         validationResult={validationResult}
@@ -126,15 +289,20 @@ export const App: React.FC = () => {
         onFormatYaml={handleFormatYaml}
         onCopyYaml={handleCopyYaml}
         onDownloadYaml={handleDownloadYaml}
+        onResetDefault={handleResetDefault}
         onSortUsers={handleSortUsers}
+        onSortProjects={handleSortProjects}
+        onOpenAddUser={handleOpenAddUser}
+        onOpenAddProject={handleOpenAddProject}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode(!darkMode)}
       />
 
       {/* Main Two-Panel Split View */}
       <main
+        id="main-content"
         ref={containerRef}
-        className="flex-1 min-h-0 flex flex-col md:flex-row relative overflow-hidden"
+        className="flex-1 min-h-0 flex flex-col md:flex-row relative overflow-hidden bg-white dark:bg-zinc-950"
       >
         {/* Left Panel: Source YAML Editor */}
         <section
@@ -148,15 +316,14 @@ export const App: React.FC = () => {
             onChange={setYamlContent}
             validationResult={validationResult}
             darkMode={darkMode}
-            onSortUsers={handleSortUsers}
           />
         </section>
 
         {/* Resizable Divider */}
         <div
           onMouseDown={handleMouseDown}
-          className={`hidden md:flex w-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-indigo-500 cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
-            isResizing ? 'bg-indigo-500' : ''
+          className={`hidden md:flex w-1.5 bg-govuk-grey-border dark:border-zinc-800 hover:bg-govuk-blue dark:hover:bg-govuk-blue cursor-col-resize transition-colors items-center justify-center shrink-0 z-10 ${
+            isResizing ? 'bg-govuk-blue' : ''
           }`}
           title="Drag to resize panels"
         />
@@ -173,9 +340,25 @@ export const App: React.FC = () => {
             onUpdateYaml={setYamlContent}
             onJumpToLine={handleJumpToLine}
             onSortUsers={handleSortUsers}
+            onSortProjects={handleSortProjects}
+            activeTab={rightPanelTab}
+            onSelectTab={setRightPanelTab}
           />
         </section>
       </main>
+
+      {/* Compact GDS Footer Status Bar */}
+      <Footer
+        stats={validationResult.stats}
+        onOpenShortcuts={() => setShowShortcuts(true)}
+        isUsersConfig={validationResult.isUsersConfig}
+      />
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 };

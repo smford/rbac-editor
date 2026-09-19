@@ -5,6 +5,8 @@ import {
   generateUserSnippet,
   insertUserIntoYaml,
   sortUsersInYaml,
+  sortProjectsInPresetYaml,
+  hasPresetProjectAnchors,
   addProjectAndEnvironmentToYaml,
   buildProjectHierarchy,
 } from './yamlValidator';
@@ -527,4 +529,262 @@ users:
     expect(filtered).toHaveLength(2);
     expect(filtered.some(p => p.projectName === 'chat-service')).toBe(true);
   });
+
+  it('should detect preset project anchors with hasPresetProjectAnchors', () => {
+    expect(hasPresetProjectAnchors(USERS_YAML_DEFAULT)).toBe(true);
+    expect(hasPresetProjectAnchors('name: sample\nfoo: bar')).toBe(false);
+  });
+
+  it('should sort projects alphabetically in all_projects_admin and all_projects_non_prod_admin', () => {
+    const unorderedYaml = `---
+x-roles:
+  admin_role: &admin_role
+    - admin
+    - readonly
+
+x-environments:
+  admin_everywhere: &admin_everywhere
+    - name: dev
+      roles: *admin_role
+  admin_non_prod: &admin_non_prod
+    - name: dev
+      roles: *admin_role
+
+x-projects:
+  all_projects_admin: &all_projects_admin
+    - name: zebra-service
+      environments: *admin_everywhere
+    - name: beta-service
+      environments: *admin_everywhere
+    - name: alpha-service
+      environments: *admin_everywhere
+
+  all_projects_non_prod_admin: &all_projects_non_prod_admin
+    - name: yellow-service
+      environments: *admin_non_prod
+    - name: apple-service
+      environments: *admin_non_prod
+
+users:
+  - username: test.user
+    projects: *all_projects_admin
+`;
+
+    // 1. Check validator detects out-of-order projects
+    const beforeValidation = validateYaml(unorderedYaml);
+    const orderIssues = beforeValidation.issues.filter(i => i.code === 'PROJECTS_NOT_ALPHABETICAL');
+    expect(orderIssues.length).toBe(2);
+    expect(orderIssues.some(i => i.message.includes('all_projects_admin'))).toBe(true);
+    expect(orderIssues.some(i => i.message.includes('all_projects_non_prod_admin'))).toBe(true);
+
+    // 2. Sort both preset anchors
+    const sortResult = sortProjectsInPresetYaml(unorderedYaml);
+    expect(sortResult.changed).toBe(true);
+    expect(sortResult.totalSorted).toBe(5);
+    expect(sortResult.sortedAnchors).toContain('all_projects_admin');
+    expect(sortResult.sortedAnchors).toContain('all_projects_non_prod_admin');
+
+    // 3. Verify order in updated YAML
+    const lines = sortResult.updatedYaml.split('\n');
+    const allAdminIdx = lines.findIndex(l => l.includes('all_projects_admin: &all_projects_admin'));
+    const allNonProdIdx = lines.findIndex(l => l.includes('all_projects_non_prod_admin: &all_projects_non_prod_admin'));
+
+    expect(allAdminIdx).toBeGreaterThan(-1);
+    expect(allNonProdIdx).toBeGreaterThan(allAdminIdx);
+
+    // In all_projects_admin: alpha-service -> beta-service -> zebra-service
+    const adminSegment = lines.slice(allAdminIdx, allNonProdIdx).join('\n');
+    const alphaPos = adminSegment.indexOf('name: alpha-service');
+    const betaPos = adminSegment.indexOf('name: beta-service');
+    const zebraPos = adminSegment.indexOf('name: zebra-service');
+    expect(alphaPos).toBeLessThan(betaPos);
+    expect(betaPos).toBeLessThan(zebraPos);
+
+    // In all_projects_non_prod_admin: apple-service -> yellow-service
+    const nonProdSegment = lines.slice(allNonProdIdx).join('\n');
+    const applePos = nonProdSegment.indexOf('name: apple-service');
+    const yellowPos = nonProdSegment.indexOf('name: yellow-service');
+    expect(applePos).toBeLessThan(yellowPos);
+
+    // 4. Validate updated YAML has 0 project order issues and is valid
+    const afterValidation = validateYaml(sortResult.updatedYaml);
+    expect(afterValidation.isValid).toBe(true);
+    const orderIssuesAfter = afterValidation.issues.filter(i => i.code === 'PROJECTS_NOT_ALPHABETICAL');
+    expect(orderIssuesAfter).toHaveLength(0);
+  });
+
+  it('should allow sorting a single preset anchor individually', () => {
+    const unorderedYaml = `---
+x-projects:
+  all_projects_admin: &all_projects_admin
+    - name: zulu
+      environments: *admin_everywhere
+    - name: alpha
+      environments: *admin_everywhere
+
+  all_projects_non_prod_admin: &all_projects_non_prod_admin
+    - name: zulu
+      environments: *admin_non_prod
+    - name: alpha
+      environments: *admin_non_prod
+`;
+
+    const sortAdminOnly = sortProjectsInPresetYaml(unorderedYaml, ['all_projects_admin']);
+    expect(sortAdminOnly.changed).toBe(true);
+    expect(sortAdminOnly.sortedAnchors).toEqual(['all_projects_admin']);
+
+    // all_projects_admin is sorted
+    expect(sortAdminOnly.updatedYaml.indexOf('name: alpha')).toBeLessThan(
+      sortAdminOnly.updatedYaml.indexOf('name: zulu')
+    );
+  });
+
+  describe('Multi-Document YAML Stream Engine', () => {
+    it('should parse multi-document stream and count documents accurately', () => {
+      const multiDoc = `apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 2
+`;
+      const res = validateYaml(multiDoc);
+      expect(res.isValid).toBe(true);
+      expect(res.stats.documentCount).toBe(2);
+      expect(Array.isArray(res.parsedData)).toBe(true);
+      expect(res.parsedData).toHaveLength(2);
+      expect(res.parsedData[0].kind).toBe('Service');
+      expect(res.parsedData[1].kind).toBe('Deployment');
+      expect(res.resolvedYaml).toContain('kind: Service');
+      expect(res.resolvedYaml).toContain('kind: Deployment');
+      expect(res.resolvedYaml).toContain('---');
+    });
+
+    it('should catch syntax errors across document boundaries', () => {
+      const multiDocWithError = `apiVersion: v1
+kind: Service
+---
+apiVersion: apps/v1
+kind: Deployment
+bad_indentation:
+ [unclosed_bracket
+`;
+      const res = validateYaml(multiDocWithError);
+      expect(res.isValid).toBe(false);
+      expect(res.stats.documentCount).toBe(2);
+      const syntaxErrors = res.issues.filter(i => i.source === 'syntax' && i.severity === 'error');
+      expect(syntaxErrors.length).toBeGreaterThan(0);
+      expect(syntaxErrors[0].line).toBeGreaterThan(3);
+    });
+
+    it('should correctly scope anchors and aliases within documents', () => {
+      const multiDocAnchors = `defaults: &svc_defaults
+  timeout: 30
+service:
+  <<: *svc_defaults
+---
+app:
+  # Reference to anchor in other document should be flagged as dangling
+  config: *svc_defaults
+`;
+      const res = validateYaml(multiDocAnchors);
+      expect(res.isValid).toBe(false);
+      expect(res.stats.documentCount).toBe(2);
+      const dangling = res.issues.find(i => i.source === 'anchor' && i.severity === 'error');
+      expect(dangling).toBeDefined();
+      expect(dangling?.message).toContain('svc_defaults');
+    });
+
+    it('should handle 0 documents for empty strings and 1 document for single-doc YAML', () => {
+      const emptyRes = validateYaml('');
+      expect(emptyRes.stats.documentCount).toBe(0);
+
+      const singleDoc = `name: standalone-doc\nstatus: active\n`;
+      const singleRes = validateYaml(singleDoc);
+      expect(singleRes.stats.documentCount).toBe(1);
+      expect(singleRes.parsedData.name).toBe('standalone-doc');
+    });
+  });
+
+  describe('Shift-Left Security & Secret Scanner', () => {
+    it('should detect sensitive plaintext keys with non-placeholder values >= 6 chars', () => {
+      const yamlWithSecrets = `database:
+  db_password: SuperSecretPassword123!
+  username: postgres
+api:
+  api_key: key_live_998877665544332211
+auth:
+  jwt_secret: ultra_secure_jwt_signing_key_456
+`;
+      const res = validateYaml(yamlWithSecrets);
+      const securityIssues = res.issues.filter(i => i.source === 'security');
+      expect(securityIssues.length).toBe(3);
+
+      const dbPass = securityIssues.find(i => i.message.includes('db_password'));
+      expect(dbPass).toBeDefined();
+      expect(dbPass?.severity).toBe('warning');
+      expect(dbPass?.suggestion).toContain('environment variable');
+
+      const apiKey = securityIssues.find(i => i.message.includes('api_key'));
+      expect(apiKey).toBeDefined();
+
+      const jwt = securityIssues.find(i => i.message.includes('jwt_secret'));
+      expect(jwt).toBeDefined();
+    });
+
+    it('should not flag sensitive keys if value length is under 6 characters', () => {
+      const yamlWithShortPass = `db:
+  password: 12345
+  passwd: abc
+`;
+      const res = validateYaml(yamlWithShortPass);
+      const securityIssues = res.issues.filter(i => i.source === 'security');
+      expect(securityIssues).toHaveLength(0);
+    });
+
+    it('should detect high-entropy and format patterns (PEM keys, AWS keys, GitHub tokens)', () => {
+      const yamlWithFormats = `credentials:
+  aws_access_key: AKIAIOSFODNN7ABCD123
+  github_pat: ghp_123456789012345678901234567890123456
+  ssl_private_key: |
+    -----BEGIN PRIVATE KEY-----
+    MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC7
+    -----END PRIVATE KEY-----
+`;
+      const res = validateYaml(yamlWithFormats);
+      const securityIssues = res.issues.filter(i => i.source === 'security');
+      expect(securityIssues.length).toBeGreaterThanOrEqual(3);
+
+      const awsIssue = securityIssues.find(i => i.message.includes('AWS Access Key ID'));
+      expect(awsIssue).toBeDefined();
+
+      const ghIssue = securityIssues.find(i => i.message.includes('GitHub'));
+      expect(ghIssue).toBeDefined();
+
+      const pemIssue = securityIssues.find(i => i.message.includes('PEM Private Key'));
+      expect(pemIssue).toBeDefined();
+    });
+
+    it('should safely ignore variable interpolations and known placeholders', () => {
+      const yamlWithPlaceholders = `services:
+  db:
+    password: \${DATABASE_PASSWORD}
+    db_password: $DB_PASS
+    api_key: CHANGE_ME
+    auth_token: <REDACTED>
+    client_secret: replace_me
+    jwt_secret: "{{ .Values.jwtSecret }}"
+    private_key: TODO_INSERT_KEY
+`;
+      const res = validateYaml(yamlWithPlaceholders);
+      const securityIssues = res.issues.filter(i => i.source === 'security');
+      expect(securityIssues).toHaveLength(0);
+    });
+  });
 });
+
