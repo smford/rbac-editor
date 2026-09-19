@@ -1,5 +1,8 @@
 # RBAC Editor • In-Browser YAML Validator & Access Manager
 
+> 🚀 **Live Interactive Demo**: **[http://stephenford.org/yaml-web-validator/](http://stephenford.org/yaml-web-validator/)**  
+> 🔒 **100% Client-Side Privacy**: Zero server transmission. All parsing, anchor evaluation, secret scanning, and validation happen entirely inside your browser.
+
 [![CI](https://github.com/smford/rbac-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/smford/rbac-editor/actions/workflows/ci.yml)
 [![Deploy to GitHub Pages](https://github.com/smford/rbac-editor/actions/workflows/deploy.yml/badge.svg)](https://github.com/smford/rbac-editor/actions/workflows/deploy.yml)
 
@@ -22,6 +25,18 @@
 ### 4. Dark Mode & RBAC Directory Management
 ![Dark Mode & RBAC Directory](docs/screenshots/04-dark-mode-rbac-directory.png)
 *Accessible high-contrast GDS Dark Mode theme with real-time RBAC User Directory, Super Admin and Power Admin classification metrics, and project hierarchy breakdown.*
+
+### 5. "Add User" Assistant & Permission Preset Generator
+![Add User Assistant](docs/screenshots/05-add-user-wizard.png)
+*Interactive user onboarding assistant with live input validation, preset anchor reusability patterns (`*all_projects_admin`, `*all_projects_non_prod_admin`), permission cloning, and live YAML preview.*
+
+### 6. "Add Project & Environment" Wizard
+![Add Project & Environment Wizard](docs/screenshots/06-add-project-wizard.png)
+*Structured wizard to register new microservices or environments, bind reusable role templates, auto-register in global presets, and assign user access with batch selection.*
+
+### 7. Keyboard Shortcuts & Quick Navigation Modal
+![Keyboard Shortcuts Modal](docs/screenshots/07-keyboard-shortcuts-modal.png)
+*Power-user keyboard shortcut modal (accessible via `Ctrl+/` or footer shortcut button) for instant tab switching, auto-formatting, sorting, and file operations.*
 
 ---
 
