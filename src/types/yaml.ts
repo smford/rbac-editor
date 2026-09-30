@@ -1,5 +1,5 @@
 export type IssueSeverity = 'error' | 'warning' | 'info';
-export type IssueSource = 'syntax' | 'anchor' | 'schema' | 'rbac';
+export type IssueSource = 'syntax' | 'anchor' | 'schema' | 'rbac' | 'security';
 
 export interface ValidationIssue {
   id: string;
@@ -98,6 +98,7 @@ export interface UsersMetadata {
   knownEnvironments: string[];
   knownRoles: string[];
   allAnchorNames: string[];
+  hasPresetProjectAnchors?: boolean;
 }
 
 export interface ValidationStats {
@@ -111,6 +112,7 @@ export interface ValidationStats {
   danglingAliasCount: number;
   usersCount: number;
   parseTimeMs: number;
+  documentCount: number;
 }
 
 export interface ValidationResult {
@@ -125,4 +127,5 @@ export interface ValidationResult {
   stats: ValidationStats;
   isUsersConfig: boolean;
   usersMetadata?: UsersMetadata;
+  hasPresetProjectAnchors?: boolean;
 }

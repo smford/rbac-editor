@@ -14,9 +14,9 @@ import {
   CheckCircle2,
   Layers,
   Key,
-  Tag,
   X,
   Zap,
+  UserPlus,
 } from 'lucide-react';
 import { ValidationResult, RbacUser } from '../../types/yaml';
 import { buildProjectHierarchy } from '../../utils/yamlValidator';
@@ -25,6 +25,8 @@ interface UserDirectoryTabProps {
   validationResult: ValidationResult;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
+  onOpenAddUser?: () => void;
   onOpenAddProject?: () => void;
   initialStatFilter?: 'all' | 'super' | 'power' | 'projects';
   initialProjectsViewMode?: 'by-project' | 'hierarchy' | 'by-count';
@@ -53,34 +55,34 @@ const ExpandedUserProjects: React.FC<{ user: RbacUser }> = ({ user }) => {
     : filtered;
 
   return (
-    <div className="border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-black/40 p-3.5 space-y-3">
+    <div className="border-t-2 border-govuk-black dark:border-zinc-800 bg-govuk-grey/30 dark:bg-zinc-950 p-3.5 space-y-3">
       {/* Header and Project Search */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs">
-          <FolderGit2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider text-[10px]">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <FolderGit2 className="w-4 h-4 text-govuk-black dark:text-zinc-200 shrink-0" />
+          <span className="font-bold text-govuk-black dark:text-zinc-100 uppercase tracking-wider text-xs">
             Projects, Environments &amp; Roles ({user.projects.length})
           </span>
           {user.isSuperAdmin ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 font-semibold flex items-center gap-1">
-              <Shield className="w-2.5 h-2.5" /> Super Admin
+            <span className="govuk-tag govuk-tag--purple text-[10px] font-bold">
+              SUPER ADMIN
             </span>
           ) : user.isPowerAdmin ? (
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-semibold flex items-center gap-1">
-              <Zap className="w-2.5 h-2.5" /> Power Admin
+            <span className="govuk-tag govuk-tag--yellow text-[10px] font-bold">
+              POWER ADMIN
             </span>
           ) : null}
         </div>
 
         {isLarge && (
           <div className="relative">
-            <Search className="w-3 h-3 text-zinc-400 absolute left-2 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-govuk-text-secondary dark:text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder={`Filter ${user.projects.length} projects...`}
               value={projectSearch}
               onChange={e => setProjectSearch(e.target.value)}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded px-2 pl-6 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-indigo-500 w-44"
+              className="govuk-input rounded-none pl-8 pr-2 py-1 text-xs text-govuk-black dark:text-zinc-100 dark:bg-zinc-900 dark:border-zinc-700 placeholder:text-govuk-text-secondary dark:placeholder:text-zinc-500 w-48"
             />
           </div>
         )}
@@ -89,95 +91,84 @@ const ExpandedUserProjects: React.FC<{ user: RbacUser }> = ({ user }) => {
       {/* Projects List */}
       <div className="space-y-2.5">
         {displayProjects.length === 0 ? (
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 italic py-3 text-center bg-white dark:bg-zinc-900/60 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800">
+          <div className="text-xs text-govuk-text-secondary dark:text-zinc-400 italic py-3 text-center bg-white dark:bg-zinc-900 border-2 border-dashed border-govuk-grey-border dark:border-zinc-800 rounded-none">
             No projects match &ldquo;{projectSearch}&rdquo;
           </div>
         ) : (
           displayProjects.map((proj, pIdx) => (
             <div
               key={proj.name + pIdx}
-              className="rounded-lg border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xs"
+              className="rounded-none border-2 border-govuk-black dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-none"
             >
               {/* 1. Project Title Bar */}
-              <div className="px-3 py-2 bg-zinc-100/80 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700/80 flex items-center justify-between gap-2">
+              <div className="px-3 py-2 bg-govuk-grey dark:bg-zinc-800 border-b-2 border-govuk-black dark:border-zinc-700 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-5 h-5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 bg-govuk-black dark:bg-zinc-950 text-white flex items-center justify-center shrink-0 text-xs">
                     <FolderGit2 className="w-3 h-3" />
                   </div>
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Project:</span>
-                    <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                    <span className="text-xs text-govuk-text-secondary dark:text-zinc-400 font-bold">Project:</span>
+                    <span className="font-mono text-xs font-bold text-govuk-black dark:text-zinc-100 truncate">
                       {proj.name}
                     </span>
                   </div>
 
                   {proj.isAlias && proj.aliasName && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shrink-0">
+                    <span className="govuk-tag govuk-tag--purple text-[10px] font-bold">
                       *{proj.aliasName}
                     </span>
                   )}
                 </div>
 
-                <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 shrink-0">
-                  {proj.environments.length} {proj.environments.length === 1 ? 'environment' : 'environments'}
+                <span className="text-xs font-mono font-bold text-govuk-text-secondary dark:text-zinc-400 shrink-0">
+                  {proj.environments.length} {proj.environments.length === 1 ? 'ENV' : 'ENVS'}
                 </span>
               </div>
 
               {/* 2. Environments & 3. Roles Body */}
-              <div className="p-2.5 space-y-2 bg-white dark:bg-zinc-900/60">
+              <div className="p-3 space-y-2 bg-white dark:bg-zinc-900">
                 {proj.environments.length === 0 ? (
-                  <p className="text-[11px] text-zinc-400 italic px-1">
+                  <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 italic px-1">
                     No environments configured for this project
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 gap-1.5">
+                  <div className="grid grid-cols-1 gap-2">
                     {proj.environments.map((env, eIdx) => (
                       <div
                         key={env.name + eIdx}
-                        className="rounded-md border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/60 p-2 text-xs space-y-1.5"
+                        className="rounded-none border border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/30 dark:bg-zinc-950 p-2.5 text-xs space-y-2"
                       >
                         {/* 2. Environment Header */}
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                            <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                            <span className="text-zinc-500 dark:text-zinc-400 font-sans text-[11px] font-normal">
+                          <div className="flex items-center gap-2 font-mono text-xs font-bold text-govuk-black dark:text-zinc-100">
+                            <Layers className="w-3.5 h-3.5 text-govuk-blue dark:text-sky-400 shrink-0" />
+                            <span className="text-govuk-text-secondary dark:text-zinc-400 font-sans text-xs font-bold">
                               Environment:
                             </span>
-                            <span className="text-cyan-700 dark:text-cyan-300 font-semibold">{env.name}</span>
+                            <span className="text-govuk-black dark:text-zinc-100 font-bold">{env.name}</span>
                           </div>
 
-                          <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
-                            {env.roles.length} {env.roles.length === 1 ? 'role' : 'roles'}
+                          <span className="govuk-tag govuk-tag--grey text-[10px] font-bold">
+                            {env.roles.length} {env.roles.length === 1 ? 'ROLE' : 'ROLES'}
                           </span>
                         </div>
 
                         {/* 3. Roles List */}
-                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5 border-t border-zinc-200/60 dark:border-zinc-800/50">
-                          <span className="text-[10px] uppercase font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
-                            <Key className="w-2.5 h-2.5 text-amber-500" />
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-govuk-grey-border dark:border-zinc-800">
+                          <span className="text-[10px] uppercase font-bold text-govuk-text-secondary dark:text-zinc-400 flex items-center gap-1 shrink-0">
+                            <Key className="w-2.5 h-2.5 text-govuk-black dark:text-zinc-200" />
                             <span>Roles:</span>
                           </span>
 
                           {env.roles.length === 0 ? (
-                            <span className="text-[10px] text-zinc-400 italic">No roles assigned</span>
+                            <span className="text-xs text-govuk-text-secondary dark:text-zinc-400 italic">No roles assigned</span>
                           ) : (
                             env.roles.map((role, rIdx) => (
                               <span
                                 key={rIdx}
-                                className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-medium border flex items-center gap-1 ${
-                                  role === 'admin'
-                                    ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25'
-                                    : role === 'readonly'
-                                    ? 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25'
-                                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
-                                }`}
+                                className={`govuk-tag text-[10px] font-bold ${getRoleBadgeStyle(role)}`}
                               >
-                                {role === 'admin' ? (
-                                  <Shield className="w-2.5 h-2.5" />
-                                ) : (
-                                  <Tag className="w-2.5 h-2.5 opacity-70" />
-                                )}
-                                <span>{role}</span>
+                                {role}
                               </span>
                             ))
                           )}
@@ -198,7 +189,7 @@ const ExpandedUserProjects: React.FC<{ user: RbacUser }> = ({ user }) => {
           <button
             type="button"
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium py-1 px-3 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/60 transition-colors"
+            className="govuk-button--secondary text-xs font-bold py-1 px-3 rounded-none"
           >
             {showAll
               ? 'Show fewer projects'
@@ -214,35 +205,37 @@ const ExpandedUserProjects: React.FC<{ user: RbacUser }> = ({ user }) => {
 const getEnvBadgeColor = (name: string) => {
   const n = name.toLowerCase();
   if (n.includes('prod')) {
-    return 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25';
+    return 'govuk-tag govuk-tag--red';
   }
   if (n.includes('stag')) {
-    return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25';
+    return 'govuk-tag govuk-tag--yellow';
   }
   if (n.includes('dev')) {
-    return 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/25';
+    return 'govuk-tag govuk-tag--blue';
   }
   if (n.includes('sand')) {
-    return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25';
+    return 'govuk-tag govuk-tag--green';
   }
-  return 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/25';
+  return 'govuk-tag govuk-tag--grey';
 };
 
 const getRoleBadgeStyle = (role: string) => {
   const r = role.toLowerCase();
   if (r === 'admin') {
-    return 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/25';
+    return 'govuk-tag--purple';
   }
   if (r === 'readonly') {
-    return 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25';
+    return 'govuk-tag--grey';
   }
-  return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25';
+  return 'govuk-tag--green';
 };
 
 export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
   validationResult,
   onJumpToLine,
   onSortUsers,
+  onSortProjects,
+  onOpenAddUser,
   onOpenAddProject,
   initialStatFilter,
   initialProjectsViewMode,
@@ -374,17 +367,17 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       {/* Header Banner */}
-      <div className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 space-y-3 shadow-sm">
+      <div className="bg-white dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-800 rounded-none p-4 space-y-4 shadow-none">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-govuk-black dark:bg-zinc-800 text-white flex items-center justify-center font-bold">
               <Users className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <h3 className="text-base font-bold text-govuk-black dark:text-zinc-100">
                 RBAC User Directory
               </h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="text-xs text-govuk-text-secondary dark:text-zinc-400">
                 Parsed {users.length} user access definitions from YAML
               </p>
             </div>
@@ -398,22 +391,34 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                 setProjectsViewMode('hierarchy');
               }}
               title="Show Project -> Environments -> Roles -> Users Hierarchy"
-              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg shadow-sm transition-colors shrink-0 ${
+              className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none transition-colors shrink-0 ${
                 statFilter === 'projects' && projectsViewMode === 'hierarchy'
-                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs ring-2 ring-indigo-400 dark:ring-indigo-500'
-                  : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700'
+                  ? 'govuk-button mb-0'
+                  : 'govuk-button--secondary mb-0'
               }`}
             >
-              <FolderTree className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <FolderTree className="w-3.5 h-3.5" />
               <span>Project Hierarchy</span>
             </button>
+
+            {onOpenAddUser && (
+              <button
+                type="button"
+                onClick={onOpenAddUser}
+                title="Add a new user"
+                className="govuk-button inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add User</span>
+              </button>
+            )}
 
             {onOpenAddProject && (
               <button
                 type="button"
                 onClick={onOpenAddProject}
                 title="Add a new project and environment with user access"
-                className="flex items-center gap-1.5 text-xs bg-cyan-600 hover:bg-cyan-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm transition-colors shrink-0"
+                className="govuk-button--secondary inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 <span>Add Project &amp; Environment</span>
@@ -430,18 +435,34 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                   setTimeout(() => setFeedbackMsg(null), 3500);
                 }}
                 title="Sort all users alphabetically in the YAML source code"
-                className="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-1.5 rounded-lg shadow-sm transition-colors shrink-0"
+                className="govuk-button--secondary inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
               >
                 <ArrowDownAZ className="w-3.5 h-3.5" />
                 <span>Sort Users in YAML</span>
+              </button>
+            )}
+
+            {onSortProjects && (validationResult.hasPresetProjectAnchors || usersMeta?.hasPresetProjectAnchors) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSortProjects();
+                  setFeedbackMsg('All projects in all_projects_admin and all_projects_non_prod_admin have been sorted alphabetically!');
+                  setTimeout(() => setFeedbackMsg(null), 3500);
+                }}
+                title="Sort all projects alphabetically in all_projects_admin & all_projects_non_prod_admin"
+                className="govuk-button--secondary inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-none mb-0 shrink-0"
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>Sort Preset Projects</span>
               </button>
             )}
           </div>
         </div>
 
         {feedbackMsg && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 animate-fade-in font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          <div className="border-4 border-govuk-green bg-[#00703c]/10 dark:bg-emerald-950/30 text-govuk-green-dark dark:text-emerald-300 text-xs p-3 rounded-none flex items-center gap-2 font-bold">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{feedbackMsg}</span>
           </div>
         )}
@@ -453,19 +474,18 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
             type="button"
             onClick={() => setStatFilter('all')}
             title="Click to view all users"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-3 rounded-none border-2 text-left transition-colors cursor-pointer ${
               statFilter === 'all'
-                ? 'ring-2 ring-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700 shadow-xs'
-                : 'bg-zinc-50 dark:bg-zinc-950/60 hover:bg-zinc-100 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                ? 'border-govuk-black bg-govuk-black text-white dark:border-zinc-700 dark:bg-zinc-800'
+                : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/40 dark:bg-zinc-950 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 text-govuk-black dark:text-zinc-100'
             }`}
           >
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            <span className={`text-[11px] uppercase tracking-wider font-bold flex items-center justify-between ${
+              statFilter === 'all' ? 'text-white' : 'text-govuk-text-secondary dark:text-zinc-400'
+            }`}>
               <span>Total Users</span>
-              {statFilter === 'all' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-              )}
             </span>
-            <div className="text-sm font-semibold mt-0.5 text-zinc-900 dark:text-zinc-100">
+            <div className="text-xl font-bold mt-1">
               {users.length}
             </div>
           </button>
@@ -475,19 +495,20 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
             type="button"
             onClick={() => setStatFilter(statFilter === 'super' ? 'all' : 'super')}
             title="Click to filter Super Admins (Admin access in all projects & all environments)"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-3 rounded-none border-2 text-left transition-colors cursor-pointer ${
               statFilter === 'super'
-                ? 'ring-2 ring-purple-500 bg-purple-50/70 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700 shadow-xs'
-                : 'bg-zinc-50 dark:bg-zinc-950/60 hover:bg-zinc-100 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                ? 'border-govuk-black bg-govuk-purple text-white dark:border-purple-600'
+                : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/40 dark:bg-zinc-950 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 text-govuk-black dark:text-zinc-100'
             }`}
           >
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            <span className={`text-[11px] uppercase tracking-wider font-bold flex items-center justify-between ${
+              statFilter === 'super' ? 'text-white' : 'text-govuk-text-secondary dark:text-zinc-400'
+            }`}>
               <span>Super Admins</span>
-              {statFilter === 'super' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-              )}
             </span>
-            <div className="text-sm font-semibold mt-0.5 text-purple-600 dark:text-purple-400">
+            <div className={`text-xl font-bold mt-1 ${
+              statFilter === 'super' ? 'text-white' : 'text-govuk-purple dark:text-purple-400'
+            }`}>
               {superAdminCount}
             </div>
           </button>
@@ -497,19 +518,20 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
             type="button"
             onClick={() => setStatFilter(statFilter === 'power' ? 'all' : 'power')}
             title="Click to filter Power Admins (Admin access in sandbox, dev & staging; no prod admin)"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-3 rounded-none border-2 text-left transition-colors cursor-pointer ${
               statFilter === 'power'
-                ? 'ring-2 ring-amber-500 bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 shadow-xs'
-                : 'bg-zinc-50 dark:bg-zinc-950/60 hover:bg-zinc-100 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                ? 'border-govuk-black bg-[#f47738] text-white dark:border-orange-600'
+                : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/40 dark:bg-zinc-950 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 text-govuk-black dark:text-zinc-100'
             }`}
           >
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            <span className={`text-[11px] uppercase tracking-wider font-bold flex items-center justify-between ${
+              statFilter === 'power' ? 'text-white' : 'text-govuk-text-secondary dark:text-zinc-400'
+            }`}>
               <span>Power Admins</span>
-              {statFilter === 'power' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              )}
             </span>
-            <div className="text-sm font-semibold mt-0.5 text-amber-600 dark:text-amber-400">
+            <div className={`text-xl font-bold mt-1 ${
+              statFilter === 'power' ? 'text-white' : 'text-govuk-yellow dark:text-amber-400'
+            }`}>
               {powerAdminCount}
             </div>
           </button>
@@ -526,19 +548,20 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               }
             }}
             title="Click to view Project Hierarchy (Project → Environments → Roles → Users)"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-3 rounded-none border-2 text-left transition-colors cursor-pointer ${
               statFilter === 'projects'
-                ? 'ring-2 ring-cyan-500 bg-cyan-50/70 dark:bg-cyan-950/40 border-cyan-300 dark:border-cyan-700 shadow-xs'
-                : 'bg-zinc-50 dark:bg-zinc-950/60 hover:bg-zinc-100 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                ? 'border-govuk-black bg-govuk-blue text-white dark:border-sky-600'
+                : 'border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/40 dark:bg-zinc-950 hover:bg-govuk-grey dark:hover:bg-zinc-800/60 text-govuk-black dark:text-zinc-100'
             }`}
           >
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            <span className={`text-[11px] uppercase tracking-wider font-bold flex items-center justify-between ${
+              statFilter === 'projects' ? 'text-white' : 'text-govuk-text-secondary dark:text-zinc-400'
+            }`}>
               <span>Projects</span>
-              {statFilter === 'projects' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
-              )}
             </span>
-            <div className="text-sm font-semibold mt-0.5 text-cyan-600 dark:text-cyan-400">
+            <div className={`text-xl font-bold mt-1 ${
+              statFilter === 'projects' ? 'text-white' : 'text-govuk-blue dark:text-sky-400'
+            }`}>
               {usersMeta?.knownProjects.length || 0}
             </div>
           </button>
@@ -547,15 +570,15 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
 
       {/* Active Stat Filter Banners */}
       {statFilter === 'super' && (
-        <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/25 px-3 py-2 rounded-lg text-xs text-purple-700 dark:text-purple-300">
-          <div className="flex items-center gap-1.5 font-medium">
-            <Shield className="w-4 h-4" />
+        <div className="flex items-center justify-between bg-purple-50 dark:bg-purple-950/40 border-l-[10px] border-govuk-purple border-y border-r border-govuk-grey-border dark:border-zinc-800 px-4 py-3 rounded-none text-xs text-govuk-black dark:text-zinc-200">
+          <div className="flex items-center gap-2 font-bold">
+            <Shield className="w-4 h-4 text-govuk-purple dark:text-purple-400" />
             <span>Showing {filteredUsers.length} Super Admins (Admin access in all projects and all environments)</span>
           </div>
           <button
             type="button"
             onClick={() => setStatFilter('all')}
-            className="flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1"
           >
             <X className="w-3 h-3" />
             <span>Show All Users</span>
@@ -564,15 +587,15 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
       )}
 
       {statFilter === 'power' && (
-        <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/25 px-3 py-2 rounded-lg text-xs text-amber-800 dark:text-amber-300">
-          <div className="flex items-center gap-1.5 font-medium">
-            <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <div className="flex items-center justify-between bg-yellow-50 dark:bg-amber-950/40 border-l-[10px] border-govuk-yellow border-y border-r border-govuk-grey-border dark:border-zinc-800 px-4 py-3 rounded-none text-xs text-govuk-black dark:text-zinc-200">
+          <div className="flex items-center gap-2 font-bold">
+            <Zap className="w-4 h-4 text-govuk-yellow dark:text-amber-400" />
             <span>Showing {filteredUsers.length} Power Admins (Admin in sandbox, dev &amp; staging; no prod admin)</span>
           </div>
           <button
             type="button"
             onClick={() => setStatFilter('all')}
-            className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded transition-colors"
+            className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1"
           >
             <X className="w-3 h-3" />
             <span>Show All Users</span>
@@ -581,34 +604,34 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
       )}
 
       {statFilter === 'projects' && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-cyan-500/10 border border-cyan-500/25 px-3 py-2 rounded-lg text-xs text-cyan-800 dark:text-cyan-300">
-          <div className="flex items-center gap-2 font-medium">
-            <FolderGit2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-50 dark:bg-blue-950/40 border-l-[10px] border-govuk-blue border-y border-r border-govuk-grey-border dark:border-zinc-800 px-4 py-3 rounded-none text-xs text-govuk-black dark:text-zinc-200">
+          <div className="flex items-center gap-2 font-bold">
+            <FolderGit2 className="w-4 h-4 text-govuk-blue dark:text-sky-400" />
             <span>
               Projects Directory ({usersMeta?.knownProjects.length || projectHierarchy.length} Projects, {users.length} Users)
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center bg-white dark:bg-zinc-900 rounded-md border border-cyan-500/30 p-0.5 text-[11px]">
+            <div className="flex items-center bg-govuk-grey dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-700 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setProjectsViewMode('hierarchy')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1 font-bold rounded-none transition-colors ${
                   projectsViewMode === 'hierarchy'
-                    ? 'bg-cyan-600 text-white font-medium shadow-2xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-govuk-black dark:bg-zinc-100 text-white dark:text-zinc-950'
+                    : 'text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey-border dark:hover:bg-zinc-800'
                 }`}
               >
-                <FolderTree className="w-3 h-3" />
-                <span>Hierarchy (Project → Env → Role → Users)</span>
+                <FolderTree className="w-3.5 h-3.5" />
+                <span>Hierarchy</span>
               </button>
               <button
                 type="button"
                 onClick={() => setProjectsViewMode('by-project')}
-                className={`px-2 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 font-bold rounded-none transition-colors ${
                   projectsViewMode === 'by-project'
-                    ? 'bg-cyan-600 text-white font-medium shadow-2xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-govuk-black dark:bg-zinc-100 text-white dark:text-zinc-950'
+                    : 'text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey-border dark:hover:bg-zinc-800'
                 }`}
               >
                 Flat Project List
@@ -616,33 +639,60 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               <button
                 type="button"
                 onClick={() => setProjectsViewMode('by-count')}
-                className={`px-2 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 font-bold rounded-none transition-colors ${
                   projectsViewMode === 'by-count'
-                    ? 'bg-cyan-600 text-white font-medium shadow-2xs'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-govuk-black dark:bg-zinc-100 text-white dark:text-zinc-950'
+                    : 'text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey-border dark:hover:bg-zinc-800'
                 }`}
               >
-                Users by Project Count
+                By Project Count
               </button>
             </div>
+
+            {onOpenAddUser && (
+              <button
+                type="button"
+                onClick={onOpenAddUser}
+                className="govuk-button text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add User</span>
+              </button>
+            )}
 
             {onOpenAddProject && (
               <button
                 type="button"
                 onClick={onOpenAddProject}
-                className="flex items-center gap-1 text-[11px] font-semibold text-white bg-cyan-600 hover:bg-cyan-700 px-2.5 py-1 rounded transition-colors shadow-2xs"
+                className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none mb-0 inline-flex items-center gap-1"
               >
-                <FolderPlus className="w-3 h-3" />
+                <FolderPlus className="w-3.5 h-3.5" />
                 <span>Add Project</span>
+              </button>
+            )}
+
+            {onSortProjects && (validationResult.hasPresetProjectAnchors || usersMeta?.hasPresetProjectAnchors) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSortProjects();
+                  setFeedbackMsg('All projects in all_projects_admin and all_projects_non_prod_admin have been sorted alphabetically!');
+                  setTimeout(() => setFeedbackMsg(null), 3500);
+                }}
+                title="Sort all projects alphabetically in all_projects_admin & all_projects_non_prod_admin"
+                className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1"
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>Sort Preset Projects</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={() => setStatFilter('all')}
-              className="flex items-center gap-1 text-[11px] font-semibold text-cyan-700 dark:text-cyan-300 hover:text-cyan-900 dark:hover:text-cyan-100 bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded transition-colors"
+              className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
               <span>All Users</span>
             </button>
           </div>
@@ -652,7 +702,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
       {/* Search & Project Filter */}
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
         <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-govuk-text-secondary dark:text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder={
@@ -666,7 +716,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
             }
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+            className="govuk-input w-full pl-9 pr-3 py-1.5 text-xs text-govuk-black dark:text-zinc-100 dark:bg-zinc-900 dark:border-zinc-700 placeholder:text-govuk-text-secondary dark:placeholder:text-zinc-500"
           />
         </div>
 
@@ -681,7 +731,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                 });
                 setExpandedProjects(allOpen);
               }}
-              className="text-[11px] text-zinc-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-colors shadow-2xs"
+              className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none"
             >
               Expand All
             </button>
@@ -694,7 +744,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                 });
                 setExpandedProjects(allClosed);
               }}
-              className="text-[11px] text-zinc-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium px-2.5 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 transition-colors shadow-2xs"
+              className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none"
             >
               Collapse All
             </button>
@@ -703,11 +753,11 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             {usersMeta?.knownProjects && (
               <div className="flex items-center gap-1.5">
-                <Filter className="w-3 h-3 text-zinc-400" />
+                <Filter className="w-3.5 h-3.5 text-govuk-text-secondary dark:text-zinc-400" />
                 <select
                   value={projectFilter}
                   onChange={e => setProjectFilter(e.target.value)}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-indigo-500"
+                  className="govuk-input rounded-none px-2.5 py-1 text-xs text-govuk-black dark:text-zinc-100 bg-white dark:bg-zinc-900 dark:border-zinc-700 font-bold"
                 >
                   <option value="all">All Projects</option>
                   {usersMeta.knownProjects.map(p => (
@@ -719,14 +769,14 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               </div>
             )}
 
-            <div className="flex items-center bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5 rounded-lg text-xs">
+            <div className="flex items-center bg-govuk-grey dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-700 p-0.5 text-xs">
               <button
                 onClick={() => setSortOrder('az')}
                 title="Sort users A-Z"
-                className={`px-2 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 font-bold rounded-none transition-colors ${
                   sortOrder === 'az'
-                    ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-300 font-medium shadow-sm'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-govuk-black dark:bg-zinc-100 text-white dark:text-zinc-950'
+                    : 'text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey-border dark:hover:bg-zinc-800'
                 }`}
               >
                 A-Z
@@ -734,10 +784,10 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               <button
                 onClick={() => setSortOrder('file')}
                 title="Show in YAML file order"
-                className={`px-2 py-1 rounded transition-colors ${
+                className={`px-2.5 py-1 font-bold rounded-none transition-colors ${
                   sortOrder === 'file'
-                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium shadow-sm'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    ? 'bg-govuk-black dark:bg-zinc-100 text-white dark:text-zinc-950'
+                    : 'text-govuk-black dark:text-zinc-300 hover:bg-govuk-grey-border dark:hover:bg-zinc-800'
                 }`}
               >
                 File Order
@@ -752,11 +802,11 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
         /* Hierarchical Project -> Environments -> Roles -> Users */
         <div className="space-y-3">
           {projectHierarchy.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500 bg-white/60 dark:bg-zinc-900/40 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
-              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-300">
+            <div className="py-10 text-center bg-white dark:bg-zinc-900 border-2 border-dashed border-govuk-grey-border dark:border-zinc-800 rounded-none p-6">
+              <p className="text-sm font-bold text-govuk-black dark:text-zinc-100">
                 No projects match &ldquo;{search}&rdquo;
               </p>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-1">
                 Try a different search query or clear the search filter.
               </p>
             </div>
@@ -767,50 +817,50 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               return (
                 <div
                   key={proj.projectName}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden transition-all shadow-xs"
+                  className="bg-white dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-800 rounded-none shadow-none"
                 >
                   {/* 1. Project Accordion Header */}
                   <div
                     onClick={() => toggleProjectExpand(proj.projectName)}
-                    className="p-3 bg-zinc-100/80 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors"
+                    className="p-3 bg-govuk-grey dark:bg-zinc-800 border-b-2 border-govuk-black dark:border-zinc-700 flex items-center justify-between gap-3 cursor-pointer hover:bg-govuk-grey-border/40 dark:hover:bg-zinc-700/60 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 h-6 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 bg-govuk-black dark:bg-zinc-950 text-white flex items-center justify-center shrink-0 font-bold text-xs">
                         <FolderGit2 className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+                        <span className="text-xs text-govuk-text-secondary dark:text-zinc-400 font-bold">
                           Project:
                         </span>
-                        <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                        <span className="font-mono text-sm font-bold text-govuk-black dark:text-zinc-100 truncate">
                           {proj.projectName}
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-semibold shrink-0">
-                          {proj.environments.length} {proj.environments.length === 1 ? 'environment' : 'environments'}
+                        <span className="govuk-tag govuk-tag--blue text-[10px] font-bold">
+                          {proj.environments.length} {proj.environments.length === 1 ? 'ENV' : 'ENVS'}
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 font-semibold shrink-0">
-                          {proj.userCount} {proj.userCount === 1 ? 'user' : 'users'}
+                        <span className="govuk-tag govuk-tag--grey text-[10px] font-bold">
+                          {proj.userCount} {proj.userCount === 1 ? 'USER' : 'USERS'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold text-govuk-text-secondary dark:text-zinc-400 hidden sm:inline">
                         {isProjectExpanded ? 'Collapse' : 'Expand'}
                       </span>
                       {isProjectExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-zinc-500" />
+                        <ChevronDown className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-zinc-500" />
+                        <ChevronRight className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                       )}
                     </div>
                   </div>
 
                   {/* 2. Environments List */}
                   {isProjectExpanded && (
-                    <div className="p-3 bg-zinc-50/50 dark:bg-black/30 space-y-3">
+                    <div className="p-3.5 bg-govuk-grey/20 dark:bg-zinc-950 space-y-3">
                       {proj.environments.length === 0 ? (
-                        <div className="text-xs text-zinc-500 italic py-2 px-1">
+                        <div className="text-xs text-govuk-text-secondary dark:text-zinc-400 italic py-2 px-1">
                           No environments configured for this project
                         </div>
                       ) : (
@@ -821,101 +871,96 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                           return (
                             <div
                               key={envKey}
-                              className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-2xs"
+                              className="rounded-none border-2 border-govuk-black dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-none"
                             >
                               {/* Environment Header */}
                               <div
                                 onClick={() => toggleEnvExpand(envKey)}
-                                className="p-2.5 bg-zinc-100/90 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700/80 flex items-center justify-between gap-2 cursor-pointer hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors"
+                                className="p-2.5 bg-govuk-grey dark:bg-zinc-800 border-b border-govuk-grey-border dark:border-zinc-700 flex items-center justify-between gap-2 cursor-pointer hover:bg-govuk-grey-border/30 dark:hover:bg-zinc-700/60 transition-colors"
                               >
                                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                  <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
-                                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+                                  <Layers className="w-3.5 h-3.5 text-govuk-blue shrink-0" />
+                                  <span className="text-xs text-govuk-text-secondary dark:text-zinc-400 font-bold font-sans">
                                     Environment:
                                   </span>
                                   <span
-                                    className={`text-[11px] font-mono px-2 py-0.5 rounded font-semibold border ${getEnvBadgeColor(
+                                    className={`text-[10px] font-mono font-bold ${getEnvBadgeColor(
                                       env.envName
                                     )}`}
                                   >
                                     {env.envName}
                                   </span>
-                                  <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                                  <span className="text-xs font-mono text-govuk-text-secondary dark:text-zinc-400">
                                     {env.roles.length} {env.roles.length === 1 ? 'role' : 'roles'} &bull; {env.userCount} {env.userCount === 1 ? 'user' : 'users'}
                                   </span>
                                 </div>
 
                                 <div className="flex items-center gap-1 shrink-0">
                                   {isEnvExpanded ? (
-                                    <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                                    <ChevronDown className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                                   ) : (
-                                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                                    <ChevronRight className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                                   )}
                                 </div>
                               </div>
 
                               {/* 3. Roles and 4. Users in this Environment */}
                               {isEnvExpanded && (
-                                <div className="p-3 space-y-3 bg-zinc-50/40 dark:bg-zinc-950/40">
+                                <div className="p-3 space-y-3 bg-white dark:bg-zinc-900">
                                   {env.roles.length === 0 ? (
-                                    <div className="text-xs text-zinc-400 italic py-1">
+                                    <div className="text-xs text-govuk-text-secondary dark:text-zinc-400 italic py-1">
                                       No roles assigned in this environment
                                     </div>
                                   ) : (
                                     env.roles.map(role => (
                                       <div
                                         key={role.roleName}
-                                        className="p-2.5 rounded-lg border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/80 space-y-2"
+                                        className="p-3 rounded-none border border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey/20 dark:bg-zinc-950/60 space-y-2.5"
                                       >
                                         {/* 3. Role Title Bar */}
-                                        <div className="flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/60 pb-2">
-                                          <div className="flex items-center gap-1.5">
-                                            <Key className="w-3 h-3 text-amber-500 shrink-0" />
-                                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+                                        <div className="flex items-center justify-between gap-2 border-b border-govuk-grey-border dark:border-zinc-800 pb-2">
+                                          <div className="flex items-center gap-2">
+                                            <Key className="w-3 h-3 text-govuk-black dark:text-zinc-300 shrink-0" />
+                                            <span className="text-xs text-govuk-text-secondary dark:text-zinc-400 font-bold">
                                               Role:
                                             </span>
                                             <span
-                                              className={`text-[11px] font-mono px-2 py-0.5 rounded font-semibold border flex items-center gap-1 ${getRoleBadgeStyle(
+                                              className={`govuk-tag text-[10px] font-bold ${getRoleBadgeStyle(
                                                 role.roleName
                                               )}`}
                                             >
-                                              {role.roleName === 'admin' ? (
-                                                <Shield className="w-2.5 h-2.5" />
-                                              ) : (
-                                                <Tag className="w-2.5 h-2.5 opacity-70" />
-                                              )}
-                                              <span>{role.roleName}</span>
+                                              {role.roleName}
                                             </span>
                                           </div>
 
-                                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium shrink-0">
-                                            {role.users.length} {role.users.length === 1 ? 'user' : 'users'}
+                                          <span className="govuk-tag govuk-tag--grey text-[10px] font-bold">
+                                            {role.users.length} {role.users.length === 1 ? 'USER' : 'USERS'}
                                           </span>
                                         </div>
 
                                         {/* 4. List of Users */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                                           {role.users.map((u, uIdx) => (
                                             <div
                                               key={u.username + uIdx}
-                                              className="p-2 rounded-md border border-zinc-200/60 dark:border-zinc-800/70 bg-zinc-50/60 dark:bg-zinc-950/60 flex items-center justify-between gap-2 hover:border-indigo-300 dark:hover:border-indigo-700/50 transition-all"
+                                              className="p-2.5 rounded-none border border-govuk-grey-border dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between gap-2 hover:border-govuk-black dark:hover:border-zinc-600 transition-colors"
                                             >
                                               <div className="flex items-center gap-2 min-w-0">
-                                                <div className="w-6 h-6 rounded-full bg-zinc-200/70 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-mono font-semibold text-zinc-700 dark:text-zinc-300 shrink-0">
+                                                <div className="w-6 h-6 bg-govuk-black dark:bg-zinc-950 text-white flex items-center justify-center text-[10px] font-mono font-bold shrink-0">
                                                   {u.username.slice(0, 2).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
-                                                  <div className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                                  <div className="font-mono text-xs font-bold text-govuk-black dark:text-zinc-100 truncate">
                                                     {u.username}
                                                   </div>
                                                   <div className="flex items-center gap-1 mt-0.5">
                                                     {u.isSuperAdmin ? (
-                                                      <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shrink-0 flex items-center gap-0.5">
-                                                        <Shield className="w-2 h-2" /> Super Admin
+                                                      <span className="govuk-tag govuk-tag--purple text-[9px] font-bold">
+                                                        SUPER
                                                       </span>
                                                     ) : u.isPowerAdmin ? (
-                                                      <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0 flex items-center gap-0.5">
-                                                        <Zap className="w-2 h-2" /> Power Admin
+                                                      <span className="govuk-tag govuk-tag--yellow text-[9px] font-bold">
+                                                        POWER
                                                       </span>
                                                     ) : null}
                                                   </div>
@@ -926,7 +971,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                                                 type="button"
                                                 onClick={() => onJumpToLine(u.line)}
                                                 title={`Jump to line ${u.line} in YAML`}
-                                                className="flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 transition-colors shrink-0"
+                                                className="govuk-button--secondary text-[11px] font-mono font-bold px-2 py-0.5 rounded-none inline-flex items-center gap-1 shrink-0"
                                               >
                                                 <span>Line {u.line}</span>
                                                 <ExternalLink className="w-2.5 h-2.5" />
@@ -952,11 +997,11 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
         </div>
       ) : statFilter === 'projects' && projectsViewMode === 'by-project' ? (
         /* Projects Breakdown: List of Projects with their assigned users */
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {projectUsersList.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500 bg-white/60 dark:bg-zinc-900/40 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
-              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-300">No projects match &ldquo;{search}&rdquo;</p>
-              <p className="text-xs text-zinc-500 mt-1">Try a different search query or clear the filter.</p>
+            <div className="py-10 text-center bg-white dark:bg-zinc-900 border-2 border-dashed border-govuk-grey-border dark:border-zinc-800 rounded-none p-6">
+              <p className="text-sm font-bold text-govuk-black dark:text-zinc-100">No projects match &ldquo;{search}&rdquo;</p>
+              <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-1">Try a different search query or clear the filter.</p>
             </div>
           ) : (
             projectUsersList.map(proj => {
@@ -965,60 +1010,60 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               return (
                 <div
                   key={proj.projectName}
-                  className="bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-all shadow-sm"
+                  className="bg-white dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-800 rounded-none shadow-none"
                 >
                   {/* Project Accordion Header */}
                   <div
                     onClick={() => toggleProjectExpand(proj.projectName)}
-                    className="p-3 bg-zinc-100/80 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-zinc-200/60 dark:hover:bg-zinc-700 transition-colors"
+                    className="p-3 bg-govuk-grey dark:bg-zinc-800 border-b-2 border-govuk-black dark:border-zinc-700 flex items-center justify-between gap-3 cursor-pointer hover:bg-govuk-grey-border/40 dark:hover:bg-zinc-700/60 transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 h-6 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 bg-govuk-black dark:bg-zinc-950 text-white flex items-center justify-center shrink-0 text-xs font-bold">
                         <FolderGit2 className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                        <span className="font-mono text-sm font-bold text-govuk-black dark:text-zinc-100 truncate">
                           {proj.projectName}
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 font-semibold shrink-0">
-                          {proj.users.length} {proj.users.length === 1 ? 'user' : 'users'}
+                        <span className="govuk-tag govuk-tag--blue text-[10px] font-bold">
+                          {proj.users.length} {proj.users.length === 1 ? 'USER' : 'USERS'}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                      <span className="text-xs font-bold text-govuk-text-secondary dark:text-zinc-400 hidden sm:inline">
                         {isProjectExpanded ? 'Collapse' : 'Expand'}
                       </span>
                       {isProjectExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-zinc-500" />
+                        <ChevronDown className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-zinc-500" />
+                        <ChevronRight className="w-4 h-4 text-govuk-black dark:text-zinc-100" />
                       )}
                     </div>
                   </div>
 
                   {/* Users inside this project */}
                   {isProjectExpanded && (
-                    <div className="p-3 bg-zinc-50/50 dark:bg-black/30 space-y-2">
+                    <div className="p-3.5 bg-govuk-grey/20 dark:bg-zinc-950 space-y-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {proj.users.map((u, uIdx) => (
                           <div
                             key={uIdx}
-                            className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs space-y-1.5"
+                            className="p-3 rounded-none border border-govuk-grey-border dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-none space-y-2"
                           >
-                            <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                <span className="font-mono text-xs font-bold text-govuk-black dark:text-zinc-100 truncate">
                                   {u.username}
                                 </span>
                                 {u.isSuperAdmin ? (
-                                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 shrink-0 flex items-center gap-0.5">
-                                    <Shield className="w-2 h-2" /> Super Admin
+                                  <span className="govuk-tag govuk-tag--purple text-[9px] font-bold">
+                                    SUPER
                                   </span>
                                 ) : u.isPowerAdmin ? (
-                                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0 flex items-center gap-0.5">
-                                    <Zap className="w-2 h-2" /> Power Admin
+                                  <span className="govuk-tag govuk-tag--yellow text-[9px] font-bold">
+                                    POWER
                                   </span>
                                 ) : null}
                               </div>
@@ -1030,7 +1075,7 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                                   onJumpToLine(u.line);
                                 }}
                                 title={`Jump to line ${u.line}`}
-                                className="flex items-center gap-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors shrink-0"
+                                className="govuk-button--secondary text-[11px] font-mono font-bold px-2 py-0.5 rounded-none inline-flex items-center gap-1 shrink-0"
                               >
                                 <span>Line {u.line}</span>
                                 <ExternalLink className="w-2.5 h-2.5" />
@@ -1039,14 +1084,14 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
 
                             {/* Environments & roles for this user in this project */}
                             {u.environments.length > 0 && (
-                              <div className="space-y-1 pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
+                              <div className="space-y-1 pt-1.5 border-t border-govuk-grey-border dark:border-zinc-800">
                                 {u.environments.map((env, envIdx) => (
-                                  <div key={envIdx} className="text-[11px] flex items-center justify-between gap-1 text-zinc-600 dark:text-zinc-400">
-                                    <span className="font-mono text-cyan-700 dark:text-cyan-300 flex items-center gap-1 truncate">
-                                      <Layers className="w-2.5 h-2.5 shrink-0" />
+                                  <div key={envIdx} className="text-xs flex items-center justify-between gap-1 text-govuk-black dark:text-zinc-200">
+                                    <span className="font-mono font-bold flex items-center gap-1 truncate text-govuk-blue dark:text-sky-400">
+                                      <Layers className="w-3 h-3 shrink-0" />
                                       {env.name}
                                     </span>
-                                    <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                                    <span className="text-[11px] font-mono text-govuk-text-secondary dark:text-zinc-400 truncate">
                                       {env.roles.join(', ') || 'no roles'}
                                     </span>
                                   </div>
@@ -1065,11 +1110,11 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
         </div>
       ) : (
         /* Standard / Filtered User Cards List */
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filteredUsers.length === 0 ? (
-            <div className="py-12 text-center text-zinc-500 bg-white/60 dark:bg-zinc-900/40 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800">
-              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-300">No users match search criteria</p>
-              <p className="text-xs text-zinc-500 mt-1">Try searching for a different username or resetting filters.</p>
+            <div className="py-10 text-center bg-white dark:bg-zinc-900 border-2 border-dashed border-govuk-grey-border dark:border-zinc-800 rounded-none p-6">
+              <p className="text-sm font-bold text-govuk-black dark:text-zinc-100">No users match search criteria</p>
+              <p className="text-xs text-govuk-text-secondary dark:text-zinc-400 mt-1">Try searching for a different username or resetting filters.</p>
             </div>
           ) : (
             filteredUsers.map(user => {
@@ -1078,31 +1123,31 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
               return (
                 <div
                   key={user.username}
-                  className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-lg overflow-hidden transition-all shadow-sm"
+                  className="bg-white dark:bg-zinc-900 border-2 border-govuk-black dark:border-zinc-800 rounded-none shadow-none"
                 >
-                  <div className="p-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[11px] font-mono font-semibold text-zinc-700 dark:text-zinc-300 shrink-0">
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 bg-govuk-black dark:bg-zinc-950 text-white flex items-center justify-center text-xs font-mono font-bold shrink-0">
                         {user.username.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                          <span className="font-mono text-sm font-bold text-govuk-black dark:text-zinc-100 truncate">
                             {user.username}
                           </span>
 
                           {user.isSuperAdmin ? (
-                            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.2 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
-                              <Shield className="w-2.5 h-2.5" /> Super Admin
+                            <span className="govuk-tag govuk-tag--purple text-[10px] font-bold">
+                              SUPER ADMIN
                             </span>
                           ) : user.isPowerAdmin ? (
-                            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-                              <Zap className="w-2.5 h-2.5" /> Power Admin
+                            <span className="govuk-tag govuk-tag--yellow text-[10px] font-bold">
+                              POWER ADMIN
                             </span>
                           ) : null}
 
-                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                            {user.projects.length} {user.projects.length === 1 ? 'project' : 'projects'}
+                          <span className="govuk-tag govuk-tag--grey text-[10px] font-bold">
+                            {user.projects.length} {user.projects.length === 1 ? 'PROJECT' : 'PROJECTS'}
                           </span>
                         </div>
                       </div>
@@ -1112,16 +1157,17 @@ export const UserDirectoryTab: React.FC<UserDirectoryTabProps> = ({
                       <button
                         onClick={() => onJumpToLine(user.line)}
                         title={`Jump to line ${user.line}`}
-                        className="flex items-center gap-1 text-[11px] font-mono px-2 py-1 rounded bg-zinc-100 hover:bg-indigo-600 dark:bg-zinc-800 dark:hover:bg-indigo-600 text-indigo-600 dark:text-indigo-400 hover:text-white transition-colors"
+                        className="govuk-button--secondary text-xs font-bold py-1 px-2.5 rounded-none inline-flex items-center gap-1 font-mono"
                       >
                         <span>Line {user.line}</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
+                        <ExternalLink className="w-3 h-3" />
                       </button>
 
                       {user.projects.length > 0 && (
                         <button
                           onClick={() => toggleUserExpand(user.username)}
-                          className="p-1 rounded bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-colors"
+                          className="govuk-button--secondary p-1.5 rounded-none font-bold"
+                          title={isExpanded ? 'Collapse projects' : 'View projects'}
                         >
                           {isExpanded ? (
                             <ChevronDown className="w-3.5 h-3.5" />

@@ -15,6 +15,8 @@ export default defineConfig({
             '@uiw/react-codemirror',
             '@codemirror/lang-yaml',
             '@codemirror/theme-one-dark',
+            '@codemirror/lint',
+            '@codemirror/view',
           ],
           'vendor-yaml': ['yaml'],
           'vendor-icons': ['lucide-react'],

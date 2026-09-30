@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   AlertCircle,
   GitFork,
   UserPlus,
   Users,
   FileCheck,
-  Sparkles,
   FolderPlus,
-  FolderTree,
 } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 import { DiagnosticsTab } from './tabs/DiagnosticsTab';
@@ -17,7 +15,7 @@ import { AddProjectTab } from './tabs/AddProjectTab';
 import { UserDirectoryTab } from './tabs/UserDirectoryTab';
 import { ResolvedTab } from './tabs/ResolvedTab';
 
-type RightPanelTab = 'diagnostics' | 'anchors' | 'adduser' | 'addproject' | 'directory' | 'hierarchy' | 'resolved';
+export type RightPanelTab = 'diagnostics' | 'anchors' | 'directory' | 'resolved' | 'adduser' | 'addproject' | 'hierarchy';
 
 interface RightPanelProps {
   validationResult: ValidationResult;
@@ -25,6 +23,9 @@ interface RightPanelProps {
   onUpdateYaml: (newYaml: string) => void;
   onJumpToLine: (line: number, column?: number) => void;
   onSortUsers?: () => void;
+  onSortProjects?: (targetAnchor?: string) => void;
+  activeTab?: RightPanelTab;
+  onSelectTab?: (tab: RightPanelTab) => void;
 }
 
 export const RightPanel: React.FC<RightPanelProps> = ({
@@ -33,172 +34,197 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onUpdateYaml,
   onJumpToLine,
   onSortUsers,
+  onSortProjects,
+  activeTab: controlledTab,
+  onSelectTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<RightPanelTab>('diagnostics');
+  const [internalTab, setInternalTab] = useState<RightPanelTab>('diagnostics');
+  const activeTab = controlledTab ?? internalTab;
+  const setActiveTab = (tab: RightPanelTab) => {
+    if (onSelectTab) onSelectTab(tab);
+    setInternalTab(tab);
+  };
 
   const errorCount = validationResult.issues.filter(i => i.severity === 'error').length;
   const warningCount = validationResult.issues.filter(i => i.severity === 'warning').length;
   const totalIssues = errorCount + warningCount;
 
-  // If there are errors, make sure user can easily see diagnostics
-  useEffect(() => {
-    if (errorCount > 0 && activeTab !== 'diagnostics' && activeTab !== 'adduser') {
-      // Keep current tab unless user wants to inspect
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const allTabs: {
+    id: RightPanelTab;
+    label: string;
+    icon: React.ReactNode;
+    tag?: React.ReactNode;
+    visible?: boolean;
+  }[] = [
+    {
+      id: 'diagnostics',
+      label: 'Validation',
+      icon: (
+        <AlertCircle
+          className={`w-3.5 h-3.5 ${
+            errorCount > 0
+              ? 'text-govuk-red'
+              : warningCount > 0
+              ? 'text-govuk-yellow-tint'
+              : 'text-govuk-green'
+          }`}
+        />
+      ),
+      tag: totalIssues > 0 ? (
+        <span
+          className={`govuk-tag text-[10px] py-0.2 px-1 ${
+            errorCount > 0 ? 'govuk-tag--red' : 'govuk-tag--yellow text-govuk-black'
+          }`}
+        >
+          {totalIssues}
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'anchors',
+      label: 'Anchors',
+      icon: <GitFork className="w-3.5 h-3.5" />,
+      tag: validationResult.stats.anchorCount > 0 ? (
+        <span className="govuk-tag govuk-tag--blue text-[10px] py-0.2 px-1">
+          {validationResult.stats.anchorCount}
+        </span>
+      ) : undefined,
+    },
+    {
+      id: 'directory',
+      label: `Users & Access (${validationResult.stats.usersCount})`,
+      icon: <Users className="w-3.5 h-3.5" />,
+      visible: validationResult.isUsersConfig,
+    },
+    {
+      id: 'resolved',
+      label: 'Resolved YAML',
+      icon: <FileCheck className="w-3.5 h-3.5" />,
+    },
+  ];
+
+  const visibleTabs = allTabs.filter(t => t.visible !== false);
+
+  const handleTabKeyDown = (e: React.KeyboardEvent, currentIndex: number) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextIndex = (currentIndex + 1) % visibleTabs.length;
+      const nextTab = visibleTabs[nextIndex];
+      setActiveTab(nextTab.id);
+      tabRefs.current[nextTab.id]?.focus();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevIndex = (currentIndex - 1 + visibleTabs.length) % visibleTabs.length;
+      const prevTab = visibleTabs[prevIndex];
+      setActiveTab(prevTab.id);
+      tabRefs.current[prevTab.id]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      const firstTab = visibleTabs[0];
+      setActiveTab(firstTab.id);
+      tabRefs.current[firstTab.id]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      const lastTab = visibleTabs[visibleTabs.length - 1];
+      setActiveTab(lastTab.id);
+      tabRefs.current[lastTab.id]?.focus();
     }
-  }, [errorCount, activeTab]);
+  };
 
   return (
-    <div className="h-full flex flex-col bg-slate-50/70 dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 select-none transition-colors">
-      {/* Tab Navigation Header */}
-      <div className="h-10 px-2 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/60 flex items-center justify-between shrink-0 overflow-x-auto">
-        <div className="flex items-center gap-1">
-          {/* Diagnostics Tab */}
-          <button
-            onClick={() => setActiveTab('diagnostics')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeTab === 'diagnostics'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <AlertCircle
-              className={`w-3.5 h-3.5 ${
-                errorCount > 0
-                  ? 'text-rose-600 dark:text-rose-400'
-                  : warningCount > 0
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-emerald-600 dark:text-emerald-400'
-              }`}
-            />
-            <span>Validation</span>
-            {totalIssues > 0 && (
-              <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                  errorCount > 0
-                    ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
-                    : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-                }`}
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-950 border-l border-govuk-grey-border dark:border-zinc-800 select-none transition-colors">
+      {/* GOV.UK Tab Navigation Header */}
+      <nav
+        className="h-11 px-2 border-b-2 border-govuk-grey-border dark:border-zinc-800 bg-govuk-grey dark:bg-zinc-900 flex items-center justify-between shrink-0 overflow-x-auto overflow-y-hidden"
+        role="tablist"
+        aria-label="Editor Views"
+      >
+        <div className="self-end flex items-end gap-1 min-w-max pb-0 -mb-[2px]">
+          {visibleTabs.map((tab, idx) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                ref={el => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={0}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={e => handleTabKeyDown(e, idx)}
+                className={`group relative h-[38px] inline-flex items-center gap-1.5 px-3.5 text-xs cursor-pointer transition-colors border-t-4 select-none shrink-0 ${
+                  isActive
+                    ? 'bg-white dark:bg-zinc-950 text-govuk-black dark:text-zinc-100 font-bold border-t-govuk-blue border-x border-govuk-grey-border dark:border-zinc-800 border-b-2 border-b-white dark:border-b-zinc-950 z-10'
+                    : 'text-govuk-blue dark:text-zinc-400 hover:text-govuk-blue-dark dark:hover:text-zinc-200 hover:bg-[#e5e5e4] dark:hover:bg-zinc-800 border-t-transparent border-x border-transparent border-b-2 border-b-transparent font-medium'
+                } focus:outline-none focus-visible:outline-none focus-visible:border-t-govuk-blue focus-visible:bg-govuk-yellow focus-visible:text-govuk-black focus-visible:shadow-[0_-2px_#ffdd00,0_4px_#0b0c0c] focus-visible:z-20`}
               >
-                {totalIssues}
-              </span>
-            )}
-          </button>
-
-          {/* Anchors & Aliases Tab */}
-          <button
-            onClick={() => setActiveTab('anchors')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeTab === 'anchors'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <GitFork className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Anchors &amp; Merges</span>
-            {validationResult.stats.anchorCount > 0 && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
-                {validationResult.stats.anchorCount}
-              </span>
-            )}
-          </button>
-
-          {/* Add User Assistant Tab */}
-          <button
-            onClick={() => setActiveTab('adduser')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeTab === 'adduser'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>Add User</span>
-            {validationResult.isUsersConfig && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center gap-0.5">
-                <Sparkles className="w-2.5 h-2.5" />
-                Wizard
-              </span>
-            )}
-          </button>
-
-          {/* Add Project Assistant Tab */}
-          <button
-            onClick={() => setActiveTab('addproject')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeTab === 'addproject'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <FolderPlus className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span>Add Project</span>
-            {validationResult.isUsersConfig && (
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 flex items-center gap-0.5">
-                <Sparkles className="w-2.5 h-2.5" />
-                Wizard
-              </span>
-            )}
-          </button>
-
-          {/* User Directory Tab (shown if users are configured) */}
-          {validationResult.isUsersConfig && (
-            <button
-              onClick={() => setActiveTab('directory')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'directory'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-              <span>Users ({validationResult.stats.usersCount})</span>
-            </button>
-          )}
-
-          {/* Project Hierarchy Tab (Project -> Environments -> Roles -> Users) */}
-          {validationResult.isUsersConfig && (
-            <button
-              onClick={() => setActiveTab('hierarchy')}
-              title="View Project -> Environments -> Roles -> Users Hierarchy"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'hierarchy'
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              }`}
-            >
-              <FolderTree className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-              <span>Project Hierarchy</span>
-            </button>
-          )}
-
-          {/* Resolved & JSON Tab */}
-          <button
-            onClick={() => setActiveTab('resolved')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeTab === 'resolved'
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            <FileCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Resolved YAML</span>
-          </button>
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.tag}
+              </button>
+            );
+          })}
         </div>
-      </div>
+
+        {/* Action Buttons: Add User & Add Project */}
+        {validationResult.isUsersConfig && (
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto pl-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('adduser')}
+              title="Add a new user (Wizard)"
+              className={`h-7 px-2.5 text-xs font-bold rounded-none mb-0 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
+                activeTab === 'adduser'
+                  ? 'govuk-button ring-2 ring-govuk-black dark:ring-white'
+                  : 'govuk-button'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5 shrink-0" />
+              <span>Add User</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('addproject')}
+              title="Add a new project & environment (Wizard)"
+              className={`h-7 px-2.5 text-xs font-bold rounded-none mb-0 inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap ${
+                activeTab === 'addproject'
+                  ? 'govuk-button--secondary ring-2 ring-govuk-black dark:ring-white'
+                  : 'govuk-button--secondary'
+              }`}
+            >
+              <FolderPlus className="w-3.5 h-3.5 shrink-0" />
+              <span>Add Project</span>
+            </button>
+          </div>
+        )}
+      </nav>
 
       {/* Tab Content Body */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div
+        className="flex-1 min-h-0 overflow-hidden bg-white dark:bg-zinc-950"
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === 'diagnostics' && (
           <DiagnosticsTab
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
+            onSortProjects={onSortProjects}
           />
         )}
         {activeTab === 'anchors' && (
           <AnchorsTab
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
+            onSortProjects={onSortProjects}
           />
         )}
         {activeTab === 'adduser' && (
@@ -207,6 +233,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             currentYaml={currentYaml}
             onUpdateYaml={onUpdateYaml}
             onJumpToLine={onJumpToLine}
+            onSwitchToDirectory={() => setActiveTab('directory')}
           />
         )}
         {activeTab === 'addproject' && (
@@ -218,26 +245,20 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onSwitchToDirectory={() => setActiveTab('directory')}
           />
         )}
-        {activeTab === 'directory' && (
+        {(activeTab === 'directory' || activeTab === 'hierarchy') && (
           <UserDirectoryTab
             validationResult={validationResult}
             onJumpToLine={onJumpToLine}
             onSortUsers={onSortUsers}
+            onSortProjects={onSortProjects}
+            onOpenAddUser={() => setActiveTab('adduser')}
             onOpenAddProject={() => setActiveTab('addproject')}
-          />
-        )}
-        {activeTab === 'hierarchy' && (
-          <UserDirectoryTab
-            validationResult={validationResult}
-            onJumpToLine={onJumpToLine}
-            onSortUsers={onSortUsers}
-            onOpenAddProject={() => setActiveTab('addproject')}
-            initialStatFilter="projects"
-            initialProjectsViewMode="hierarchy"
+            initialStatFilter={activeTab === 'hierarchy' ? 'projects' : undefined}
+            initialProjectsViewMode={activeTab === 'hierarchy' ? 'hierarchy' : undefined}
           />
         )}
         {activeTab === 'resolved' && (
-          <ResolvedTab validationResult={validationResult} />
+          <ResolvedTab validationResult={validationResult} currentYaml={currentYaml} />
         )}
       </div>
     </div>
