@@ -4,7 +4,7 @@ import { yaml } from '@codemirror/lang-yaml';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { linter, Diagnostic, lintGutter, forceLinting } from '@codemirror/lint';
 import { EditorView } from '@codemirror/view';
-import { Trash2, Clipboard, WrapText, ArrowDownToLine } from 'lucide-react';
+import { Trash2, Clipboard, ClipboardCopy, WrapText, ArrowDownToLine } from 'lucide-react';
 import { ValidationResult } from '../types/yaml';
 
 export interface LeftPanelHandle {
@@ -143,6 +143,14 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
     }
   };
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      alert('Clipboard access denied. Please use Cmd+C / Ctrl+C to copy from the editor.');
+    }
+  };
+
   // Drag and drop handler
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -218,6 +226,17 @@ export const LeftPanel = forwardRef<LeftPanelHandle, LeftPanelProps>(({
           >
             <WrapText className="w-3.5 h-3.5 shrink-0" />
             <span>Wrap lines</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={!value}
+            title={value ? 'Copy YAML to clipboard' : 'Editor is empty'}
+            className="h-7 px-2.5 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-none mb-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap govuk-button--secondary"
+          >
+            <ClipboardCopy className="w-3.5 h-3.5 shrink-0" />
+            <span>Copy</span>
           </button>
 
           <button
